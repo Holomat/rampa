@@ -442,50 +442,53 @@
                             throw new Error('No se pudo cargar el archivo Excel');
                         }
                         
+                        // Leer el archivo Excel con configuración más robusta
                         const arrayBuffer = await response.arrayBuffer();
-                        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                        const workbook = XLSX.read(arrayBuffer, { 
+                            type: 'array',
+                            cellText: false,
+                            cellDates: true
+                        });
                         const sheetName = workbook.SheetNames[0];
                         const worksheet = workbook.Sheets[sheetName];
-                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                         
+                        // Convertir a JSON con configuración más segura
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+                            header: 1,
+                            defval: '',
+                            raw: false
+                        });
+                        
+                        // Verificar que hay datos válidos
                         if (jsonData.length < 2) {
                             throw new Error('El archivo Excel está vacío o no tiene datos');
                         }
                         
-                        const headers = jsonData[0];
-                        const rows = jsonData.slice(1);
+                        // Filtrar filas vacías y obtener headers y datos
+                        const validRows = jsonData.filter(row => row && row.length > 0);
+                        const headers = validRows[0] || [];
+                        const rows = validRows.slice(1).filter(row => row.some(cell => cell && String(cell).trim() !== ''));
                         
                         const eventsData = rows.map((row, index) => {
                             const event = {};
                             headers.forEach((header, colIndex) => {
-                                const key = header.toLowerCase().trim();
+                                // Verificar que header sea válido y convertir a string si es necesario
+                                const headerStr = header && typeof header === 'string' ? header : String(header || '');
+                                const key = headerStr.toLowerCase().trim();
                                 const value = row[colIndex] || '';
                                 
-                                switch(key) {
-                                    case 'nombre':
-                                    case 'name':
-                                    case 'evento':
-                                        event.name = value;
-                                        break;
-                                    case 'fecha':
-                                    case 'date':
-                                        event.date = formatDate(value);
-                                        event.day = getDayOfWeek(value);
-                                        break;
-                                    case 'hora':
-                                    case 'time':
-                                        event.time = value;
-                                        break;
-                                    case 'lugar':
-                                    case 'venue':
-                                    case 'artistas':
-                                        event.venue = value;
-                                        break;
-                                    case 'categoria':
-                                    case 'category':
-                                    case 'tipo':
-                                        event.category = value;
-                                        break;
+                                // Buscar coincidencias más flexibles
+                                if (key.includes('nombre') || key.includes('name') || key.includes('evento') || colIndex === 0) {
+                                    event.name = String(value).trim();
+                                } else if (key.includes('fecha') || key.includes('date') || colIndex === 1) {
+                                    event.date = formatDate(value);
+                                    event.day = getDayOfWeek(value);
+                                } else if (key.includes('hora') || key.includes('time') || colIndex === 2) {
+                                    event.time = String(value).trim();
+                                } else if (key.includes('lugar') || key.includes('venue') || key.includes('artista') || colIndex === 3) {
+                                    event.venue = String(value).trim();
+                                } else if (key.includes('categoria') || key.includes('category') || key.includes('tipo') || colIndex === 4) {
+                                    event.category = String(value).trim();
                                 }
                             });
                             
@@ -498,7 +501,7 @@
                                 category: event.category || 'EVENTO',
                                 day: event.day || ''
                             };
-                        }).filter(event => event.name && event.name !== `Evento ${event.id}`);
+                        }).filter(event => event.name && event.name.trim() !== '' && event.name !== `Evento ${event.id}`);
                         
                         setEvents(eventsData);
                         setLoading(false);
