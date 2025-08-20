@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400&family=Inter:wght@300;400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -44,7 +45,6 @@
         .event-carousel {
             display: flex;
             transition: transform 1.8s cubic-bezier(0.16, 1, 0.3, 1);
-            width: 1400%;
             will-change: transform;
         }
 
@@ -53,7 +53,6 @@
         }
 
         .event-slide {
-            width: 7.14%;
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
@@ -157,7 +156,7 @@
 
         .contributors-section {
             position: fixed;
-            bottom: 60px; /* Reduced from 80px to 60px */
+            bottom: 60px;
             left: 10px;
             right: 10px;
             z-index: 998;
@@ -175,7 +174,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 1px;
-            margin-bottom: 8px; /* Reduced from 16px to 8px */
+            margin-bottom: 8px;
             position: relative;
             pointer-events: auto;
             justify-content: center;
@@ -263,7 +262,7 @@
             bottom: 50px;
             left: 20px;
             right: 20px;
-            display: none; /* Hidden the plus button section */
+            display: none;
             justify-content: center;
             gap: 15px;
             z-index: 999;
@@ -301,6 +300,18 @@
             transform: none;
         }
 
+        .loading-message {
+            color: #B8B0A3;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            text-align: center;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+
         @keyframes scroll-left {
             0% { transform: translateX(0); }
             100% { transform: translateX(-100%); }
@@ -314,6 +325,9 @@
         const { useState, useRef, useEffect } = React;
 
         const MSCHFEventsBillboard = () => {
+            const [events, setEvents] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
             const [selectedEvent, setSelectedEvent] = useState(null);
             const [showBrutalistInfo, setShowBrutalistInfo] = useState(true);
             const [brutalistEventData, setBrutalistEventData] = useState(null);
@@ -337,33 +351,177 @@
             const [isTagVisible, setIsTagVisible] = useState(true);
             const tagsContainerRef = useRef(null);
 
-            const events = [
-                { id: 1, name: "Phonoteque", date: "17.08.25", time: "23:00", venue: "FLHEZ, FEFIO, NICOLÁS ARIN B2B STONEM", category: "RAVE", day: "DOMINGO" },
-                { id: 2, name: "Quebrada Festival", date: "22.08.25", time: "20:00", venue: "NICOLÁS JAAR, ANTHEA, LUCIANO SUPERVIELLE", category: "FESTIVAL", day: "VIERNES" },
-                { id: 3, name: "Baum Sessions", date: "23.08.25", time: "22:00", venue: "KLANGKUENSTLER, ÂVALL", category: "RAVE", day: "SÁBADO" },
-                { id: 4, name: "No Sleep Club", date: "24.08.25", time: "23:00", venue: "DANNY AVILA, LOCAL RESIDENTS", category: "CLUB", day: "DOMINGO" },
-                { id: 5, name: "Underworld MVD", date: "29.08.25", time: "23:30", venue: "BEN KLOCK, MARCEL DETTMANN", category: "RAVE", day: "VIERNES" },
-                { id: 6, name: "Electric Park", date: "30.08.25", time: "18:00", venue: "CHARLOTTE DE WITTE, AMELIE LENS", category: "FESTIVAL", day: "SÁBADO" },
-                { id: 7, name: "Mute Night", date: "05.09.25", time: "23:00", venue: "TALE OF US, MIND AGAINST", category: "RAVE", day: "VIERNES" },
-                { id: 8, name: "Cosmic Rave", date: "06.09.25", time: "22:30", venue: "MACEO PLEX, JORIS VOORN", category: "RAVE", day: "SÁBADO" },
-                { id: 9, name: "Fabric Montevideo", date: "12.09.25", time: "23:00", venue: "CRAIG RICHARDS, TERRY FRANCIS", category: "CLUB", day: "VIERNES" },
-                { id: 10, name: "Circoloco MVD", date: "13.09.25", time: "16:00", venue: "DIXON, ÂMEELIE LENS", category: "FESTIVAL", day: "SÁBADO" },
-                { id: 11, name: "Berghain Tribute", date: "19.09.25", time: "23:30", venue: "RØDHÅD, ANSWER CODE REQUEST", category: "RAVE", day: "VIERNES" },
-                { id: 12, name: "Afterlife MVD", date: "20.09.25", time: "21:00", venue: "MATHAME, KEVIN DE VRIES", category: "RAVE", day: "SÁBADO" },
-                { id: 13, name: "Tresor Night", date: "26.09.25", time: "23:00", venue: "JEFF MILLS, ROBERT HOOD", category: "RAVE", day: "VIERNES" },
-                { id: 14, name: "Sunwaves UY", date: "27.09.25", time: "12:00", venue: "RICARDO VILLALOBOS, RARESH", category: "FESTIVAL", day: "SÁBADO" }
-            ];
+            // Función para formatear fecha
+            const formatDate = (dateStr) => {
+                if (!dateStr) return '';
+                
+                // Si ya viene en formato DD.MM.YY, lo devolvemos así
+                if (dateStr.includes('.')) {
+                    return dateStr;
+                }
+                
+                // Si viene como fecha de Excel (número de serie)
+                if (!isNaN(dateStr)) {
+                    const excelDate = new Date((dateStr - 25569) * 86400 * 1000);
+                    const day = String(excelDate.getDate()).padStart(2, '0');
+                    const month = String(excelDate.getMonth() + 1).padStart(2, '0');
+                    const year = String(excelDate.getFullYear()).slice(-2);
+                    return `${day}.${month}.${year}`;
+                }
+                
+                // Si viene como fecha normal
+                try {
+                    const date = new Date(dateStr);
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const year = String(date.getFullYear()).slice(-2);
+                    return `${day}.${month}.${year}`;
+                } catch (e) {
+                    return dateStr;
+                }
+            };
+
+            // Función para obtener día de la semana
+            const getDayOfWeek = (dateStr) => {
+                try {
+                    let date;
+                    
+                    if (!isNaN(dateStr)) {
+                        // Fecha de Excel
+                        date = new Date((dateStr - 25569) * 86400 * 1000);
+                    } else if (dateStr.includes('.')) {
+                        // Formato DD.MM.YY
+                        const [day, month, year] = dateStr.split('.');
+                        date = new Date(2000 + parseInt(year), parseInt(month) - 1, parseInt(day));
+                    } else {
+                        date = new Date(dateStr);
+                    }
+                    
+                    const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+                    return days[date.getDay()];
+                } catch (e) {
+                    return 'FECHA';
+                }
+            };
+
+            // Cargar datos desde Excel
+            useEffect(() => {
+                const loadEventsFromExcel = async () => {
+                    try {
+                        setLoading(true);
+                        
+                        // Intentar cargar desde el archivo local primero
+                        let response;
+                        try {
+                            response = await fetch('./Eventos.xlsx');
+                        } catch (localError) {
+                            // Si no existe el archivo local, usar datos de ejemplo
+                            console.log('Archivo Excel no encontrado, usando datos de ejemplo');
+                            const exampleEvents = [
+                                { id: 1, name: "Phonoteque", date: "17.08.25", time: "23:00", venue: "FLHEZ, FEFIO, NICOLÁS ARIN B2B STONEM", category: "RAVE", day: "DOMINGO" },
+                                { id: 2, name: "Quebrada Festival", date: "22.08.25", time: "20:00", venue: "NICOLÁS JAAR, ANTHEA, LUCIANO SUPERVIELLE", category: "FESTIVAL", day: "VIERNES" },
+                                { id: 3, name: "Baum Sessions", date: "23.08.25", time: "22:00", venue: "KLANGKUENSTLER, ÂVALL", category: "RAVE", day: "SÁBADO" },
+                                { id: 4, name: "No Sleep Club", date: "24.08.25", time: "23:00", venue: "DANNY AVILA, LOCAL RESIDENTS", category: "CLUB", day: "DOMINGO" },
+                                { id: 5, name: "Underworld MVD", date: "29.08.25", time: "23:30", venue: "BEN KLOCK, MARCEL DETTMANN", category: "RAVE", day: "VIERNES" },
+                                { id: 6, name: "Electric Park", date: "30.08.25", time: "18:00", venue: "CHARLOTTE DE WITTE, AMELIE LENS", category: "FESTIVAL", day: "SÁBADO" },
+                                { id: 7, name: "Mute Night", date: "05.09.25", time: "23:00", venue: "TALE OF US, MIND AGAINST", category: "RAVE", day: "VIERNES" },
+                                { id: 8, name: "Cosmic Rave", date: "06.09.25", time: "22:30", venue: "MACEO PLEX, JORIS VOORN", category: "RAVE", day: "SÁBADO" },
+                                { id: 9, name: "Fabric Montevideo", date: "12.09.25", time: "23:00", venue: "CRAIG RICHARDS, TERRY FRANCIS", category: "CLUB", day: "VIERNES" },
+                                { id: 10, name: "Circoloco MVD", date: "13.09.25", time: "16:00", venue: "DIXON, ÂMEELIE LENS", category: "FESTIVAL", day: "SÁBADO" },
+                                { id: 11, name: "Berghain Tribute", date: "19.09.25", time: "23:30", venue: "RØDHÅD, ANSWER CODE REQUEST", category: "RAVE", day: "VIERNES" },
+                                { id: 12, name: "Afterlife MVD", date: "20.09.25", time: "21:00", venue: "MATHAME, KEVIN DE VRIES", category: "RAVE", day: "SÁBADO" },
+                                { id: 13, name: "Tresor Night", date: "26.09.25", time: "23:00", venue: "JEFF MILLS, ROBERT HOOD", category: "RAVE", day: "VIERNES" },
+                                { id: 14, name: "Sunwaves UY", date: "27.09.25", time: "12:00", venue: "RICARDO VILLALOBOS, RARESH", category: "FESTIVAL", day: "SÁBADO" }
+                            ];
+                            setEvents(exampleEvents);
+                            setLoading(false);
+                            return;
+                        }
+                        
+                        if (!response.ok) {
+                            throw new Error('No se pudo cargar el archivo Excel');
+                        }
+                        
+                        const arrayBuffer = await response.arrayBuffer();
+                        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                        const sheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        if (jsonData.length < 2) {
+                            throw new Error('El archivo Excel está vacío o no tiene datos');
+                        }
+                        
+                        const headers = jsonData[0];
+                        const rows = jsonData.slice(1);
+                        
+                        const eventsData = rows.map((row, index) => {
+                            const event = {};
+                            headers.forEach((header, colIndex) => {
+                                const key = header.toLowerCase().trim();
+                                const value = row[colIndex] || '';
+                                
+                                switch(key) {
+                                    case 'nombre':
+                                    case 'name':
+                                    case 'evento':
+                                        event.name = value;
+                                        break;
+                                    case 'fecha':
+                                    case 'date':
+                                        event.date = formatDate(value);
+                                        event.day = getDayOfWeek(value);
+                                        break;
+                                    case 'hora':
+                                    case 'time':
+                                        event.time = value;
+                                        break;
+                                    case 'lugar':
+                                    case 'venue':
+                                    case 'artistas':
+                                        event.venue = value;
+                                        break;
+                                    case 'categoria':
+                                    case 'category':
+                                    case 'tipo':
+                                        event.category = value;
+                                        break;
+                                }
+                            });
+                            
+                            return {
+                                id: index + 1,
+                                name: event.name || `Evento ${index + 1}`,
+                                date: event.date || '',
+                                time: event.time || '',
+                                venue: event.venue || '',
+                                category: event.category || 'EVENTO',
+                                day: event.day || ''
+                            };
+                        }).filter(event => event.name && event.name !== `Evento ${event.id}`);
+                        
+                        setEvents(eventsData);
+                        setLoading(false);
+                        
+                    } catch (err) {
+                        console.error('Error cargando eventos:', err);
+                        setError(err.message);
+                        setLoading(false);
+                    }
+                };
+
+                loadEventsFromExcel();
+            }, []);
 
             // Calcular posiciones de eventos con mejor centrado vertical
             useEffect(() => {
-                if (tagsContainerRef.current) {
+                if (tagsContainerRef.current && events.length > 0) {
                     const container = tagsContainerRef.current;
                     const eventElements = container.querySelectorAll('.event-text');
                     const positions = Array.from(eventElements).map((element, index) => {
                         const rect = element.getBoundingClientRect();
                         const containerRect = container.getBoundingClientRect();
                         
-                        // Mejor centrado vertical: centro exacto del texto menos la mitad de la altura de la etiqueta
                         const textCenterY = rect.top - containerRect.top + (rect.height / 2) - 7;
                         
                         return {
@@ -376,7 +534,11 @@
                     });
                     setEventPositions(positions);
                 }
-            }, []);
+            }, [events]);
+
+            // Calcular ancho del carrusel dinámicamente
+            const carouselWidth = events.length > 0 ? (events.length * 100) : 1400;
+            const slideWidth = events.length > 0 ? (100 / events.length) : 7.14;
 
             // Inicializar primer evento
             useEffect(() => {
@@ -395,7 +557,7 @@
                         setIsTagVisible(true);
                     }
                 }
-            }, [eventPositions]);
+            }, [eventPositions, events]);
 
             // Obtener ancho del evento
             const getEventWidth = (eventIndex) => {
@@ -416,33 +578,30 @@
                 const toY = eventPositions[toIndex].y;
                 const yDifference = Math.abs(toY - fromY);
                 
-                // En mobile, si la diferencia Y es mayor a 8px, consideramos cambio de línea
                 return yDifference > 8;
             };
 
             // Detectar si estamos en el último elemento de una línea
             const isLastInLine = (eventIndex) => {
-                if (eventIndex >= events.length - 1) return true; // Último evento general
+                if (eventIndex >= events.length - 1) return true;
                 
                 const currentY = eventPositions[eventIndex]?.y;
                 const nextY = eventPositions[eventIndex + 1]?.y;
                 
                 if (!currentY || !nextY) return false;
                 
-                // Si el siguiente evento está en una línea diferente, este es el último de su línea
                 return Math.abs(nextY - currentY) > 8;
             };
 
             // Detectar si estamos en el primer elemento de una línea
             const isFirstInLine = (eventIndex) => {
-                if (eventIndex === 0) return true; // Primer evento general
+                if (eventIndex === 0) return true;
                 
                 const currentY = eventPositions[eventIndex]?.y;
                 const prevY = eventPositions[eventIndex - 1]?.y;
                 
                 if (!currentY || !prevY) return false;
                 
-                // Si el evento anterior está en una línea diferente, este es el primero de su línea
                 return Math.abs(currentY - prevY) > 8;
             };
 
@@ -456,18 +615,14 @@
                     const isFromLastInLine = isLastInLine(currentEventIndex);
                     const isToFirstInLine = isFirstInLine(eventIndex);
                     
-                    // Obtener el elemento de la etiqueta
                     const tagElement = document.querySelector('.sliding-tag');
                     
-                    // Caso específico: último de línea → primero de siguiente línea
                     if (hasLineBreak && isFromLastInLine && isToFirstInLine) {
-                        // Fase 1: Desaparecer
                         if (tagElement) {
                             tagElement.className = 'sliding-tag fade-out';
                         }
                         setIsTagVisible(false);
                         
-                        // Fase 2: Reposicionar invisiblemente y aparecer
                         setTimeout(() => {
                             setTagPosition({ x: position.x, y: position.y });
                             setTagWidth(width);
@@ -482,7 +637,6 @@
                         }, 300);
                         
                     } else {
-                        // Movimiento horizontal normal o cambios de línea simples
                         if (tagElement) {
                             tagElement.className = 'sliding-tag smooth-horizontal';
                         }
@@ -497,7 +651,7 @@
 
             // Mover carrusel
             const moveCarousel = (index) => {
-                const offset = -index * 7.14;
+                const offset = -index * slideWidth;
                 setCarouselOffset(offset);
                 setIsDraggingCarousel(false);
             };
@@ -510,7 +664,7 @@
                 setBrutalistEventData(newEvent);
             };
 
-            // Funciones de swipe
+            // Funciones de swipe (mantienen la misma lógica)
             const handleTouchStart = (e) => {
                 setStartX(e.touches[0].clientX);
                 setStartY(e.touches[0].clientY);
@@ -520,7 +674,7 @@
             };
 
             const handleTouchMove = (e) => {
-                if (!isSwipping) return;
+                if (!isSwipping || events.length === 0) return;
                 
                 const currentX = e.touches[0].clientX;
                 const currentY = e.touches[0].clientY;
@@ -552,7 +706,6 @@
                             const progressAbs = Math.min(Math.abs(physicsProgress), 1);
                             const smoothProgress = progressAbs * progressAbs * (3 - 2 * progressAbs);
                             
-                            // Interpolación directa y suave para todos los casos
                             const interpolatedPos = {
                                 x: currentPos.x + (targetPos.x - currentPos.x) * smoothProgress,
                                 y: currentPos.y + (targetPos.y - currentPos.y) * smoothProgress
@@ -565,17 +718,16 @@
                         }
                     }
                     
-                    // Carousel con la misma física exacta
-                    const baseOffset = -currentEventIndex * 7.14;
+                    const baseOffset = -currentEventIndex * slideWidth;
                     const carouselEffectiveDiff = Math.abs(diffX) < deadZone ? 0 : diffX - (deadZone * Math.sign(diffX));
                     const carouselPhysicsProgress = Math.tanh(carouselEffectiveDiff / 140) * 0.8;
-                    const dragOffset = carouselPhysicsProgress * 7.14;
+                    const dragOffset = carouselPhysicsProgress * slideWidth;
                     setCarouselOffset(baseOffset - dragOffset);
                 }
             };
 
             const handleTouchEnd = (e) => {
-                if (!isSwipping) return;
+                if (!isSwipping || events.length === 0) return;
                 
                 const endX = e.changedTouches[0].clientX;
                 const diffX = startX - endX;
@@ -605,7 +757,7 @@
             };
 
             const handleMouseMove = (e) => {
-                if (!isSwipping) return;
+                if (!isSwipping || events.length === 0) return;
                 
                 const currentX = e.clientX;
                 const diffX = startX - currentX;
@@ -636,7 +788,6 @@
                             const progressAbs = Math.min(Math.abs(physicsProgress), 1);
                             const smoothProgress = progressAbs * progressAbs * (3 - 2 * progressAbs);
                             
-                            // Interpolación directa y suave para todos los casos
                             const interpolatedPos = {
                                 x: currentPos.x + (targetPos.x - currentPos.x) * smoothProgress,
                                 y: currentPos.y + (targetPos.y - currentPos.y) * smoothProgress
@@ -649,16 +800,16 @@
                         }
                     }
                     
-                    const baseOffset = -currentEventIndex * 7.14;
+                    const baseOffset = -currentEventIndex * slideWidth;
                     const carouselEffectiveDiff = Math.abs(diffX) < deadZone ? 0 : diffX - (deadZone * Math.sign(diffX));
                     const carouselPhysicsProgress = Math.tanh(carouselEffectiveDiff / 140) * 0.8;
-                    const dragOffset = carouselPhysicsProgress * 7.14;
+                    const dragOffset = carouselPhysicsProgress * slideWidth;
                     setCarouselOffset(baseOffset - dragOffset);
                 }
             };
 
             const handleMouseEnd = (e) => {
-                if (!isSwipping) return;
+                if (!isSwipping || events.length === 0) return;
                 
                 const endX = e.clientX;
                 const diffX = startX - endX;
@@ -680,6 +831,7 @@
             };
 
             const handleArrowDown = () => {
+                if (events.length === 0) return;
                 const nextIndex = (currentEventIndex + 1) % events.length;
                 setCurrentEventIndex(nextIndex);
                 const nextEvent = events[nextIndex];
@@ -687,6 +839,7 @@
             };
 
             const handleArrowUp = () => {
+                if (events.length === 0) return;
                 const prevIndex = currentEventIndex === 0 ? events.length - 1 : currentEventIndex - 1;
                 setCurrentEventIndex(prevIndex);
                 const prevEvent = events[prevIndex];
@@ -699,6 +852,28 @@
                 animateEventTransition(event, eventIndex);
                 setShowBrutalistInfo(true);
             };
+
+            if (loading) {
+                return (
+                    <div className="min-h-screen bg-black overflow-hidden flex items-center justify-center" style={{ fontFamily: 'Space Mono, monospace' }}>
+                        <div className="loading-message">
+                            Cargando eventos...
+                        </div>
+                    </div>
+                );
+            }
+
+            if (error) {
+                return (
+                    <div className="min-h-screen bg-black overflow-hidden flex items-center justify-center" style={{ fontFamily: 'Space Mono, monospace' }}>
+                        <div className="loading-message">
+                            Error: {error}
+                            <br />
+                            <small>Asegúrate de que el archivo "Eventos.xlsx" esté en la misma carpeta</small>
+                        </div>
+                    </div>
+                );
+            }
 
             return (
                 <div className="min-h-screen bg-black overflow-hidden" style={{ fontFamily: 'Space Mono, monospace', padding: '10px' }}>
@@ -713,6 +888,7 @@
                         zIndex: 1,
                         pointerEvents: 'none'
                     }} />
+                    
                     {/* Logo RAMPA */}
                     <div className="logo-section">
                         <svg className="rampa-logo" width="452" height="154" viewBox="0 0 452 154" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -776,11 +952,12 @@
                                 <div 
                                     className={`event-carousel ${isDraggingCarousel ? 'dragging' : ''}`}
                                     style={{
-                                        transform: `translateX(${carouselOffset}%)`
+                                        transform: `translateX(${carouselOffset}%)`,
+                                        width: `${carouselWidth}%`
                                     }}
                                 >
                                     {events.map((event, index) => (
-                                        <div key={event.id} className="event-slide">
+                                        <div key={event.id} className="event-slide" style={{ width: `${slideWidth}%` }}>
                                             <div className="date-line">
                                                 <div className="day-circle">
                                                     <div className="brutalist-text day day-text">{event.day}</div>
