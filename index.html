@@ -254,7 +254,7 @@
         }
 
         .event-text.has-tag {
-            color: black;
+            color: #FD7B1E;
         }
 
         .final-bottom-buttons {
@@ -410,13 +410,38 @@
                     try {
                         setLoading(true);
                         
-                        // Intentar cargar desde el archivo local primero
-                        let response;
-                        try {
-                            response = await fetch('./Eventos.xlsx');
-                        } catch (localError) {
-                            // Si no existe el archivo local, usar datos de ejemplo
-                            console.log('Archivo Excel no encontrado, usando datos de ejemplo');
+                        // Lista de posibles rutas para el archivo
+                        const possiblePaths = [
+                            './Eventos.xlsx',
+                            '/Eventos.xlsx',
+                            'Eventos.xlsx',
+                            './eventos.xlsx',
+                            '/eventos.xlsx',
+                            'eventos.xlsx'
+                        ];
+                        
+                        let response = null;
+                        let foundPath = null;
+                        
+                        // Intentar cargar desde diferentes rutas
+                        for (const path of possiblePaths) {
+                            try {
+                                console.log(`Intentando cargar desde: ${path}`);
+                                response = await fetch(path);
+                                if (response.ok) {
+                                    foundPath = path;
+                                    console.log(`✅ Archivo encontrado en: ${path}`);
+                                    break;
+                                }
+                            } catch (err) {
+                                console.log(`❌ No encontrado en: ${path}`);
+                                continue;
+                            }
+                        }
+                        
+                        // Si no se encontró el archivo, usar datos de ejemplo
+                        if (!response || !response.ok) {
+                            console.log('📄 Archivo Excel no encontrado, usando datos de ejemplo');
                             const exampleEvents = [
                                 { id: 1, name: "Phonoteque", date: "17.08.25", time: "23:00", venue: "FLHEZ, FEFIO, NICOLÁS ARIN B2B STONEM", category: "RAVE", day: "DOMINGO" },
                                 { id: 2, name: "Quebrada Festival", date: "22.08.25", time: "20:00", venue: "NICOLÁS JAAR, ANTHEA, LUCIANO SUPERVIELLE", category: "FESTIVAL", day: "VIERNES" },
@@ -436,10 +461,6 @@
                             setEvents(exampleEvents);
                             setLoading(false);
                             return;
-                        }
-                        
-                        if (!response.ok) {
-                            throw new Error('No se pudo cargar el archivo Excel');
                         }
                         
                         // Leer el archivo Excel con configuración más robusta
@@ -543,24 +564,30 @@
             const carouselWidth = events.length > 0 ? (events.length * 100) : 1400;
             const slideWidth = events.length > 0 ? (100 / events.length) : 7.14;
 
-            // Inicializar primer evento
+            // Inicializar primer evento - versión mejorada
             useEffect(() => {
-                if (events.length > 0 && eventPositions.length > 0) {
+                if (events.length > 0) {
                     const firstEvent = events[0];
                     setSelectedEvent(firstEvent.id);
                     setBrutalistEventData(firstEvent);
                     setCurrentEventIndex(0);
                     setCarouselOffset(0);
+                    setShowBrutalistInfo(true);
                     
-                    const firstPosition = eventPositions[0];
-                    const firstWidth = getEventWidth(0);
-                    if (firstPosition) {
-                        setTagPosition({ x: firstPosition.x, y: firstPosition.y });
-                        setTagWidth(firstWidth);
-                        setIsTagVisible(true);
-                    }
+                    // Esperar un momento para que se rendericen los elementos
+                    setTimeout(() => {
+                        if (eventPositions.length > 0) {
+                            const firstPosition = eventPositions[0];
+                            const firstWidth = getEventWidth(0);
+                            if (firstPosition) {
+                                setTagPosition({ x: firstPosition.x, y: firstPosition.y });
+                                setTagWidth(firstWidth);
+                                setIsTagVisible(true);
+                            }
+                        }
+                    }, 100);
                 }
-            }, [eventPositions, events]);
+            }, [events, eventPositions]);
 
             // Obtener ancho del evento
             const getEventWidth = (eventIndex) => {
@@ -948,7 +975,7 @@
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseEnd}
                         onMouseLeave={handleMouseEnd}
-                        style={{ userSelect: 'none', touchAction: 'pan-y' }}
+                        style={{ userSelect: 'none', touchAction: 'pan-x' }}
                     >
                         {brutalistEventData && (
                             <div className="event-content">
