@@ -14,336 +14,136 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400&family=Inter:wght@300;400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
     <link href="https://api.fontshare.com/v2/css?f[]=new-title@400,700&display=swap" rel="stylesheet">
     <style>
+        body { margin: 0; padding: 0; overflow: hidden; }
+        
         .brutalist-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 995;
-            opacity: 1;
-            transition: opacity 0.3s ease;
-            pointer-events: auto;
-            padding: -4px 20px 20px 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 995; opacity: 1;
+            transition: opacity 0.3s ease; pointer-events: auto; padding: -4px 20px 20px 20px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
         }
 
-        /* Contenedor de evento con carousel */
-        .event-content {
-            position: relative;
-            width: 100vw;
-            overflow: hidden;
-            margin-left: -20px;
-            margin-right: -20px;
-            margin-top: -60px;
-        }
-
-        .event-carousel {
-            display: flex;
-            transition: transform 1.8s cubic-bezier(0.16, 1, 0.3, 1);
-            will-change: transform;
-        }
-
-        .event-carousel.dragging {
-            transition: none;
-        }
-
-        .event-slide {
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            padding: 0 20px;
-            box-sizing: border-box;
-        }
+        .event-content { position: relative; width: 100vw; overflow: hidden; margin-left: -20px; margin-right: -20px; margin-top: -60px; }
+        .event-carousel { display: flex; transition: transform 1.8s cubic-bezier(0.16, 1, 0.3, 1); will-change: transform; }
+        .event-carousel.dragging { transition: none; }
+        .event-slide { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 20px; box-sizing: border-box; }
 
         .brutalist-text {
-            font-family: 'Bebas Neue', sans-serif;
-            font-weight: 400;
-            color: #B8B0A3;
-            text-align: center;
-            filter: blur(0.3px);
-            padding: 0;
-            margin: 0;
-            line-height: 0.85;
-            letter-spacing: -0.06em;
+            font-family: 'Bebas Neue', sans-serif; font-weight: 400; color: #B8B0A3; text-align: center;
+            filter: blur(0.3px); padding: 0; margin: 0; line-height: 0.85; letter-spacing: -0.06em;
         }
-
-        /* TAMAÑOS REDUCIDOS 10% PARA EL AFICHE */
-        .event-slide .brutalist-text.day {
-            font-size: 21px !important;
-            margin-bottom: 4px;
-        }
-
+        .event-slide .brutalist-text.day { font-size: 21px !important; margin-bottom: 4px; }
         .event-slide .brutalist-text.date {
-            font-family: 'New Title', 'Bebas Neue', sans-serif !important;
-            font-size: 75px !important;
-            font-weight: 700 !important;
-            margin-bottom: 4px;
-            line-height: 0.75;
-            letter-spacing: -0.02em;
-            text-transform: uppercase;
+            font-family: 'New Title', 'Bebas Neue', sans-serif !important; font-size: 75px !important; font-weight: 700 !important;
+            margin-bottom: 4px; line-height: 0.75; letter-spacing: -0.02em; text-transform: uppercase;
         }
-
-        .date-line {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 4px;
-        }
-
+        .date-line { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 4px; }
         .event-slide .day-circle {
-            width: 72px !important;
-            height: 72px !important;
-            border: 2px solid #B8B0A3;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transform: scaleY(0.6);
-            position: relative;
+            width: 72px !important; height: 72px !important; border: 2px solid #B8B0A3; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; transform: scaleY(0.6); position: relative;
         }
-
-        .day-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scaleY(1.67);
-            filter: blur(0.2px);
-        }
-
+        .day-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scaleY(1.67); filter: blur(0.2px); }
         .event-slide .brutalist-text.eventname {
-            font-family: 'New Title', 'Bebas Neue', sans-serif !important;
-            font-size: 116px !important;
-            font-weight: 700 !important;
-            margin-bottom: 4px;
-            line-height: 0.85;
-            letter-spacing: -0.01em;
-            text-transform: uppercase;
+            font-family: 'New Title', 'Bebas Neue', sans-serif !important; font-size: 116px !important; font-weight: 700 !important;
+            margin-bottom: 4px; line-height: 0.85; letter-spacing: -0.01em; text-transform: uppercase;
         }
+        .event-slide .brutalist-text.time-label { font-size: 31px !important; margin-bottom: 2px; }
+        .event-slide .brutalist-text.venue-text { font-size: 35px !important; padding-top: 5px !important; }
 
-        .event-slide .brutalist-text.time-label {
-            font-size: 31px !important;
-            margin-bottom: 2px;
-        }
-
-        .event-slide .brutalist-text.venue-text {
-            font-size: 35px !important;
-            padding-top: 5px !important;
-        }
-
-        .logo-section {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 998;
-            pointer-events: none;
-        }
-
-        .rampa-logo {
-            width: 120px;
-            height: auto;
-            color: #B8B0A3;
-            filter: blur(0.3px);
-        }
+        .logo-section { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 998; pointer-events: none; }
+        .rampa-logo { width: 120px; height: auto; color: #B8B0A3; filter: blur(0.3px); }
 
         .contributors-section {
-            position: fixed;
-            bottom: 60px;
-            left: 10px;
-            right: 10px;
-            z-index: 998;
-            font-family: 'Inter', sans-serif;
-            font-size: 10px;
-            font-weight: 300;
-            color: #B8B0A3;
-            line-height: 1.0;
-            letter-spacing: 0.01em;
-            pointer-events: none;
-            margin-top: 98px;
+            position: fixed; bottom: 60px; left: 10px; right: 10px; z-index: 998; font-family: 'Inter', sans-serif;
+            font-size: 10px; font-weight: 300; color: #B8B0A3; line-height: 1.0; letter-spacing: 0.01em; pointer-events: none; margin-top: 98px;
         }
-
-        .contributors-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1px;
-            margin-bottom: 8px;
-            position: relative;
-            pointer-events: auto;
-            justify-content: center;
-        }
-
-        .event-wrapper {
-            position: relative;
-            display: inline-block;
-            margin: 0;
-            pointer-events: auto;
-        }
+        .contributors-tags { display: flex; flex-wrap: wrap; gap: 1px; margin-bottom: 8px; position: relative; pointer-events: auto; justify-content: center; }
+        .event-wrapper { position: relative; display: inline-block; margin: 0; pointer-events: auto; }
 
         .sliding-tag {
-            position: absolute;
-            background: #B8B0A3;
-            border: none;
-            border-radius: 12px;
-            padding: 2px 4px;
-            font-size: 10px;
-            font-weight: 300;
-            color: black;
-            white-space: nowrap;
-            pointer-events: none;
-            z-index: 5;
-            filter: blur(0.3px);
-            transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
-            opacity: 1;
-            min-width: 20px;
-            box-sizing: border-box;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 14px;
-            transform: translateY(-1px);
+            position: absolute; background: #B8B0A3; border: none; border-radius: 12px; padding: 2px 4px; font-size: 10px;
+            font-weight: 300; color: black; white-space: nowrap; pointer-events: none; z-index: 5; filter: blur(0.3px);
+            transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1); opacity: 1; min-width: 20px; box-sizing: border-box;
+            display: flex; align-items: center; justify-content: center; height: 14px; transform: translateY(-1px);
             will-change: transform, width, opacity, left, top;
         }
-
-        .sliding-tag.dragging {
-            transition: none;
-        }
-
-        .sliding-tag.smooth-horizontal {
-            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .sliding-tag.fade-out {
-            transition: opacity 0.3s ease-out;
-            opacity: 0;
-        }
-
-        .sliding-tag.fade-in {
-            transition: opacity 0.4s ease-in;
-            opacity: 1;
-        }
+        .sliding-tag.dragging { transition: none; }
+        .sliding-tag.smooth-horizontal { transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .sliding-tag.fade-out { transition: opacity 0.3s ease-out; opacity: 0; }
+        .sliding-tag.fade-in { transition: opacity 0.4s ease-in; opacity: 1; }
 
         .event-text {
-            color: #B8B0A3;
-            font-size: 10px;
-            font-weight: 300;
-            padding: 2px 4px;
-            cursor: pointer;
-            transition: color 0.4s ease, opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            white-space: nowrap;
-            display: inline-block;
-            margin: 0;
-            letter-spacing: 0.01em;
-            pointer-events: auto;
-            position: relative;
-            z-index: 10;
-            filter: blur(0.3px);
-            line-height: 1.0;
-            box-sizing: border-box;
+            color: #B8B0A3; font-size: 10px; font-weight: 300; padding: 2px 4px; cursor: pointer;
+            transition: color 0.4s ease, opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); white-space: nowrap;
+            display: inline-block; margin: 0; letter-spacing: 0.01em; pointer-events: auto; position: relative;
+            z-index: 10; filter: blur(0.3px); line-height: 1.0; box-sizing: border-box;
         }
+        .event-text:hover { color: #D4CFC2; }
+        .event-text.has-tag { color: #FD7B1E; }
 
-        .event-text:hover {
-            color: #D4CFC2;
+        .add-event-button {
+            position: fixed; right: 20px; bottom: 40vh; width: 50px; height: 50px; cursor: pointer;
+            transition: all 0.3s ease; pointer-events: auto; z-index: 999; background: transparent;
+            border: none; padding: 0; opacity: 0.8;
         }
+        .add-event-button:hover { transform: scale(1.1); opacity: 1; }
+        .add-event-button.active { transform: scale(0.95); opacity: 1; }
+        .add-event-button svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)); }
 
-        .event-text.has-tag {
-            color: #FD7B1E;
+        .event-form-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9);
+            z-index: 998; display: flex; align-items: center; justify-content: center; opacity: 0;
+            visibility: hidden; transition: all 0.3s ease;
         }
+        .event-form-overlay.visible { opacity: 1; visibility: visible; }
 
-        .final-bottom-buttons {
-            display: none;
-        }
-
-        .like-button {
-            position: fixed;
-            right: 20px;
-            bottom: 40vh;
-            width: 50px;
-            height: 50px;
-            cursor: pointer;
+        .event-form {
+            background: #1a1a1a; border: 2px solid #B8B0A3; border-radius: 8px; padding: 30px;
+            width: 90%; max-width: 400px; font-family: 'Inter', sans-serif; transform: scale(0.8);
             transition: all 0.3s ease;
-            pointer-events: auto;
-            z-index: 999;
-            background: transparent;
-            border: none;
-            padding: 0;
-            opacity: 0.8;
         }
+        .event-form-overlay.visible .event-form { transform: scale(1); }
 
-        .like-button:hover {
-            transform: scale(1.1);
-            opacity: 1;
+        .form-title {
+            font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: #B8B0A3; text-align: center;
+            margin-bottom: 20px; letter-spacing: 1px;
         }
+        .form-group { margin-bottom: 15px; }
+        .form-label {
+            display: block; color: #B8B0A3; font-size: 12px; font-weight: 300; margin-bottom: 5px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .form-input, .form-select {
+            width: 100%; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; padding: 10px;
+            color: #B8B0A3; font-family: 'Inter', sans-serif; font-size: 14px; box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+        .form-input:focus, .form-select:focus { outline: none; border-color: #FD7B1E; }
+        .form-select { cursor: pointer; }
 
-        .like-button.liked {
-            transform: scale(0.95);
-            opacity: 1;
+        .form-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .form-button {
+            flex: 1; background: transparent; border: 1px solid #B8B0A3; border-radius: 4px; padding: 10px;
+            color: #B8B0A3; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 300;
+            cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 0.5px;
         }
+        .form-button:hover { background: #B8B0A3; color: #1a1a1a; }
+        .form-button.submit { border-color: #FD7B1E; color: #FD7B1E; }
+        .form-button.submit:hover { background: #FD7B1E; color: #1a1a1a; }
+        .form-button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .like-button svg {
-            width: 100%;
-            height: 100%;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        .success-message {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #FD7B1E;
+            color: #1a1a1a; padding: 15px 25px; border-radius: 4px; font-family: 'Inter', sans-serif;
+            font-size: 14px; font-weight: 500; z-index: 999; opacity: 0; visibility: hidden; transition: all 0.3s ease;
         }
-
-        .like-button.liked svg path[fill="#FF0000"] {
-            fill: #FD7B1E;
-        }
-
-        .like-button.liked svg path[stroke="#FF0000"] {
-            stroke: #FD7B1E;
-        }
-
-        .like-count-overlay {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #FD7B1E;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: bold;
-            font-family: 'Inter', sans-serif;
-            min-width: 20px;
-            padding: 2px;
-            box-sizing: border-box;
-        }
-
-        .event-likes-display {
-            font-size: 9px;
-            color: #FD7B1E;
-            margin-left: 4px;
-            opacity: 0.8;
-        }
+        .success-message.visible { opacity: 1; visibility: visible; }
 
         .loading-message {
-            color: #B8B0A3;
-            font-family: 'Inter', sans-serif;
-            font-size: 12px;
-            text-align: center;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1000;
+            color: #B8B0A3; font-family: 'Inter', sans-serif; font-size: 12px; text-align: center;
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000;
         }
 
-        @keyframes scroll-left {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
-        }
+        @keyframes scroll-left { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
     </style>
 </head>
 <body>
@@ -354,26 +154,20 @@
 
         const MSCHFEventsBillboard = () => {
             const [events, setEvents] = useState([]);
-            const [eventLikes, setEventLikes] = useState({});
-            const [userLikes, setUserLikes] = useState(new Set());
             const [loading, setLoading] = useState(true);
-            const [error, setError] = useState(null);
+            const [showForm, setShowForm] = useState(false);
+            const [formData, setFormData] = useState({ nombre: '', fecha: '', hora: '', lugar: '', categoria: 'RAVE' });
+            const [isSubmitting, setIsSubmitting] = useState(false);
             const [selectedEvent, setSelectedEvent] = useState(null);
             const [showBrutalistInfo, setShowBrutalistInfo] = useState(true);
             const [brutalistEventData, setBrutalistEventData] = useState(null);
             const [currentEventIndex, setCurrentEventIndex] = useState(0);
-            
-            // Estados para swipe
             const [startX, setStartX] = useState(0);
             const [startY, setStartY] = useState(0);
             const [isSwipping, setIsSwipping] = useState(false);
             const overlayRef = useRef(null);
-            
-            // Estados para carrusel
             const [carouselOffset, setCarouselOffset] = useState(0);
             const [isDraggingCarousel, setIsDraggingCarousel] = useState(false);
-
-            // Estados para etiqueta con physics
             const [tagPosition, setTagPosition] = useState({ x: 0, y: 0 });
             const [tagWidth, setTagWidth] = useState(60);
             const [isDraggingTag, setIsDraggingTag] = useState(false);
@@ -381,89 +175,38 @@
             const [isTagVisible, setIsTagVisible] = useState(true);
             const tagsContainerRef = useRef(null);
 
-            // Cargar likes desde localStorage al inicializar
-            useEffect(() => {
-                const savedLikes = localStorage.getItem('rampa-event-likes');
-                const savedUserLikes = localStorage.getItem('rampa-user-likes');
-                
-                if (savedLikes) {
-                    try {
-                        setEventLikes(JSON.parse(savedLikes));
-                    } catch (e) {
-                        console.log('Error cargando likes guardados');
-                    }
-                }
-                
-                if (savedUserLikes) {
-                    try {
-                        setUserLikes(new Set(JSON.parse(savedUserLikes)));
-                    } catch (e) {
-                        console.log('Error cargando likes del usuario');
-                    }
-                }
-            }, []);
+            const handleFormChange = (field, value) => {
+                setFormData(prev => ({ ...prev, [field]: value }));
+            };
 
-            // Función para simular sincronización en tiempo real
-            const syncLikesWithServer = async (eventId, newCount) => {
-                // Simulación de API call - en producción conectarías con tu backend
+            const toggleForm = () => {
+                setShowForm(!showForm);
+                if (!showForm) {
+                    setFormData({ nombre: '', fecha: '', hora: '', lugar: '', categoria: 'RAVE' });
+                }
+            };
+
+            const submitEventToGoogleSheets = async (eventData) => {
+                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/TU_SCRIPT_ID_AQUI/exec';
+                
                 try {
-                    // Aquí irían las llamadas reales a tu API
-                    console.log(`Sincronizando likes para evento ${eventId}: ${newCount}`);
-                    
-                    // Simulación de respuesta del servidor con datos actualizados
-                    // En producción, esto vendría de tu base de datos
-                    return { success: true, totalLikes: newCount };
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(eventData)
+                    });
+                    return { success: true };
                 } catch (error) {
-                    console.error('Error sincronizando likes:', error);
-                    return { success: false };
+                    console.error('Error enviando a Google Sheets:', error);
+                    throw error;
                 }
             };
 
-            // Función mejorada para dar like con sincronización
-            const handleLikeEvent = async (eventId) => {
-                const isCurrentlyLiked = userLikes.has(eventId);
-                const newUserLikes = new Set(userLikes);
-                const newEventLikes = { ...eventLikes };
-                
-                if (isCurrentlyLiked) {
-                    newUserLikes.delete(eventId);
-                    newEventLikes[eventId] = Math.max(0, (newEventLikes[eventId] || 0) - 1);
-                } else {
-                    newUserLikes.add(eventId);
-                    newEventLikes[eventId] = (newEventLikes[eventId] || 0) + 1;
-                }
-                
-                // Actualizar estado local inmediatamente para UX
-                setUserLikes(newUserLikes);
-                setEventLikes(newEventLikes);
-                
-                // Guardar en localStorage
-                localStorage.setItem('rampa-event-likes', JSON.stringify(newEventLikes));
-                localStorage.setItem('rampa-user-likes', JSON.stringify([...newUserLikes]));
-                
-                // Sincronizar con servidor (simulado)
-                await syncLikesWithServer(eventId, newEventLikes[eventId]);
-            };
-
-            // Función para formatear fecha
             const formatDate = (dateStr) => {
                 if (!dateStr) return '';
+                if (dateStr.includes('.')) return dateStr;
                 
-                // Si ya viene en formato DD.MM.YY, lo devolvemos así
-                if (dateStr.includes('.')) {
-                    return dateStr;
-                }
-                
-                // Si viene como fecha de Excel (número de serie)
-                if (!isNaN(dateStr)) {
-                    const excelDate = new Date((dateStr - 25569) * 86400 * 1000);
-                    const day = String(excelDate.getDate()).padStart(2, '0');
-                    const month = String(excelDate.getMonth() + 1).padStart(2, '0');
-                    const year = String(excelDate.getFullYear()).slice(-2);
-                    return `${day}.${month}.${year}`;
-                }
-                
-                // Si viene como fecha normal
                 try {
                     const date = new Date(dateStr);
                     const day = String(date.getDate()).padStart(2, '0');
@@ -475,22 +218,9 @@
                 }
             };
 
-            // Función para obtener día de la semana
             const getDayOfWeek = (dateStr) => {
                 try {
-                    let date;
-                    
-                    if (!isNaN(dateStr)) {
-                        // Fecha de Excel
-                        date = new Date((dateStr - 25569) * 86400 * 1000);
-                    } else if (dateStr.includes('.')) {
-                        // Formato DD.MM.YY
-                        const [day, month, year] = dateStr.split('.');
-                        date = new Date(2000 + parseInt(year), parseInt(month) - 1, parseInt(day));
-                    } else {
-                        date = new Date(dateStr);
-                    }
-                    
+                    const date = new Date(dateStr);
                     const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
                     return days[date.getDay()];
                 } catch (e) {
@@ -498,167 +228,73 @@
                 }
             };
 
-            // Cargar datos desde Excel
-            useEffect(() => {
-                const loadEventsFromExcel = async () => {
-                    try {
-                        setLoading(true);
-                        
-                        // Lista de posibles rutas para el archivo
-                        const possiblePaths = [
-                            './Eventos.xlsx',
-                            '/Eventos.xlsx',
-                            'Eventos.xlsx',
-                            './eventos.xlsx',
-                            '/eventos.xlsx',
-                            'eventos.xlsx'
-                        ];
-                        
-                        let response = null;
-                        let foundPath = null;
-                        
-                        // Intentar cargar desde diferentes rutas
-                        for (const path of possiblePaths) {
-                            try {
-                                console.log(`Intentando cargar desde: ${path}`);
-                                response = await fetch(path);
-                                if (response.ok) {
-                                    foundPath = path;
-                                    console.log(`✅ Archivo encontrado en: ${path}`);
-                                    break;
-                                }
-                            } catch (err) {
-                                console.log(`❌ No encontrado en: ${path}`);
-                                continue;
-                            }
-                        }
-                        
-                        // Si no se encontró el archivo, usar datos de ejemplo
-                        if (!response || !response.ok) {
-                            console.log('📄 Archivo Excel no encontrado, usando datos de ejemplo');
-                            const exampleEvents = [
-                                { id: 1, name: "Phonoteque", date: "17.08.25", time: "23:00", venue: "FLHEZ, FEFIO, NICOLÁS ARIN B2B STONEM", category: "RAVE", day: "DOMINGO" },
-                                { id: 2, name: "Quebrada Festival", date: "22.08.25", time: "20:00", venue: "NICOLÁS JAAR, ANTHEA, LUCIANO SUPERVIELLE", category: "FESTIVAL", day: "VIERNES" },
-                                { id: 3, name: "Baum Sessions", date: "23.08.25", time: "22:00", venue: "KLANGKUENSTLER, ÂVALL", category: "RAVE", day: "SÁBADO" },
-                                { id: 4, name: "No Sleep Club", date: "24.08.25", time: "23:00", venue: "DANNY AVILA, LOCAL RESIDENTS", category: "CLUB", day: "DOMINGO" },
-                                { id: 5, name: "Underworld MVD", date: "29.08.25", time: "23:30", venue: "BEN KLOCK, MARCEL DETTMANN", category: "RAVE", day: "VIERNES" },
-                                { id: 6, name: "Electric Park", date: "30.08.25", time: "18:00", venue: "CHARLOTTE DE WITTE, AMELIE LENS", category: "FESTIVAL", day: "SÁBADO" },
-                                { id: 7, name: "Mute Night", date: "05.09.25", time: "23:00", venue: "TALE OF US, MIND AGAINST", category: "RAVE", day: "VIERNES" },
-                                { id: 8, name: "Cosmic Rave", date: "06.09.25", time: "22:30", venue: "MACEO PLEX, JORIS VOORN", category: "RAVE", day: "SÁBADO" },
-                                { id: 9, name: "Fabric Montevideo", date: "12.09.25", time: "23:00", venue: "CRAIG RICHARDS, TERRY FRANCIS", category: "CLUB", day: "VIERNES" },
-                                { id: 10, name: "Circoloco MVD", date: "13.09.25", time: "16:00", venue: "DIXON, ÂMEELIE LENS", category: "FESTIVAL", day: "SÁBADO" },
-                                { id: 11, name: "Berghain Tribute", date: "19.09.25", time: "23:30", venue: "RØDHÅD, ANSWER CODE REQUEST", category: "RAVE", day: "VIERNES" },
-                                { id: 12, name: "Afterlife MVD", date: "20.09.25", time: "21:00", venue: "MATHAME, KEVIN DE VRIES", category: "RAVE", day: "SÁBADO" },
-                                { id: 13, name: "Tresor Night", date: "26.09.25", time: "23:00", venue: "JEFF MILLS, ROBERT HOOD", category: "RAVE", day: "VIERNES" },
-                                { id: 14, name: "Sunwaves UY", date: "27.09.25", time: "12:00", venue: "RICARDO VILLALOBOS, RARESH", category: "FESTIVAL", day: "SÁBADO" }
-                            ];
-                            setEvents(exampleEvents);
-                            setLoading(false);
-                            return;
-                        }
-                        
-                        // Leer el archivo Excel con configuración más robusta
-                        const arrayBuffer = await response.arrayBuffer();
-                        const workbook = XLSX.read(arrayBuffer, { 
-                            type: 'array',
-                            cellText: false,
-                            cellDates: true
-                        });
-                        const sheetName = workbook.SheetNames[0];
-                        const worksheet = workbook.Sheets[sheetName];
-                        
-                        // Convertir a JSON con configuración más segura
-                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-                            header: 1,
-                            defval: '',
-                            raw: false
-                        });
-                        
-                        // Verificar que hay datos válidos
-                        if (jsonData.length < 2) {
-                            throw new Error('El archivo Excel está vacío o no tiene datos');
-                        }
-                        
-                        // Filtrar filas vacías y obtener headers y datos
-                        const validRows = jsonData.filter(row => row && row.length > 0);
-                        const headers = validRows[0] || [];
-                        const rows = validRows.slice(1).filter(row => row.some(cell => cell && String(cell).trim() !== ''));
-                        
-                        const eventsData = rows.map((row, index) => {
-                            const event = {};
-                            headers.forEach((header, colIndex) => {
-                                // Verificar que header sea válido y convertir a string si es necesario
-                                const headerStr = header && typeof header === 'string' ? header : String(header || '');
-                                const key = headerStr.toLowerCase().trim();
-                                const value = row[colIndex] || '';
-                                
-                                // Buscar coincidencias más flexibles
-                                if (key.includes('nombre') || key.includes('name') || key.includes('evento') || colIndex === 0) {
-                                    event.name = String(value).trim();
-                                } else if (key.includes('fecha') || key.includes('date') || colIndex === 1) {
-                                    event.date = formatDate(value);
-                                    event.day = getDayOfWeek(value);
-                                } else if (key.includes('hora') || key.includes('time') || colIndex === 2) {
-                                    event.time = String(value).trim();
-                                } else if (key.includes('lugar') || key.includes('venue') || key.includes('artista') || colIndex === 3) {
-                                    event.venue = String(value).trim();
-                                } else if (key.includes('categoria') || key.includes('category') || key.includes('tipo') || colIndex === 4) {
-                                    event.category = String(value).trim();
-                                }
-                            });
-                            
-                            return {
-                                id: index + 1,
-                                name: event.name || `Evento ${index + 1}`,
-                                date: event.date || '',
-                                time: event.time || '',
-                                venue: event.venue || '',
-                                category: event.category || 'EVENTO',
-                                day: event.day || ''
-                            };
-                        }).filter(event => event.name && event.name.trim() !== '' && event.name !== `Evento ${event.id}`);
-                        
-                        setEvents(eventsData);
-                        setLoading(false);
-                        
-                    } catch (err) {
-                        console.error('Error cargando eventos:', err);
-                        setError(err.message);
-                        setLoading(false);
-                    }
-                };
+            const handleSubmitEvent = async (e) => {
+                e.preventDefault();
+                
+                if (!formData.nombre || !formData.fecha || !formData.hora) {
+                    alert('Por favor completa todos los campos requeridos');
+                    return;
+                }
+                
+                setIsSubmitting(true);
+                
+                try {
+                    const day = getDayOfWeek(formData.fecha);
+                    const eventToSubmit = {
+                        nombre: formData.nombre,
+                        fecha: formData.fecha,
+                        hora: formData.hora,
+                        lugar: formData.lugar,
+                        categoria: formData.categoria,
+                        dia: day,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    await submitEventToGoogleSheets(eventToSubmit);
+                    
+                    const newEvent = {
+                        id: Date.now(),
+                        name: formData.nombre,
+                        date: formatDate(formData.fecha),
+                        time: formData.hora,
+                        venue: formData.lugar,
+                        category: formData.categoria,
+                        day: day
+                    };
+                    
+                    setEvents(prev => [...prev, newEvent]);
+                    
+                    const message = document.createElement('div');
+                    message.className = 'success-message visible';
+                    message.textContent = '¡Evento enviado correctamente!';
+                    document.body.appendChild(message);
+                    
+                    setTimeout(() => message.remove(), 3000);
+                    setShowForm(false);
+                    
+                } catch (error) {
+                    alert('Error enviando el evento. Intenta nuevamente.');
+                    console.error('Error:', error);
+                } finally {
+                    setIsSubmitting(false);
+                }
+            };
 
-                loadEventsFromExcel();
+            // Cargar eventos de ejemplo
+            useEffect(() => {
+                const exampleEvents = [
+                    { id: 1, name: "Phonoteque", date: "17.08.25", time: "23:00", venue: "FLHEZ, FEFIO, NICOLÁS ARIN B2B STONEM", category: "RAVE", day: "DOMINGO" },
+                    { id: 2, name: "Quebrada Festival", date: "22.08.25", time: "20:00", venue: "NICOLÁS JAAR, ANTHEA, LUCIANO SUPERVIELLE", category: "FESTIVAL", day: "VIERNES" },
+                    { id: 3, name: "Baum Sessions", date: "23.08.25", time: "22:00", venue: "KLANGKUENSTLER, ÂVALL", category: "RAVE", day: "SÁBADO" },
+                    { id: 4, name: "No Sleep Club", date: "24.08.25", time: "23:00", venue: "DANNY AVILA, LOCAL RESIDENTS", category: "CLUB", day: "DOMINGO" },
+                    { id: 5, name: "Underworld MVD", date: "29.08.25", time: "23:30", venue: "BEN KLOCK, MARCEL DETTMANN", category: "RAVE", day: "VIERNES" },
+                    { id: 6, name: "Electric Park", date: "30.08.25", time: "18:00", venue: "CHARLOTTE DE WITTE, AMELIE LENS", category: "FESTIVAL", day: "SÁBADO" }
+                ];
+                setEvents(exampleEvents);
+                setLoading(false);
             }, []);
 
-            // Calcular posiciones de eventos con mejor centrado vertical
-            useEffect(() => {
-                if (tagsContainerRef.current && events.length > 0) {
-                    const container = tagsContainerRef.current;
-                    const eventElements = container.querySelectorAll('.event-text');
-                    const positions = Array.from(eventElements).map((element, index) => {
-                        const rect = element.getBoundingClientRect();
-                        const containerRect = container.getBoundingClientRect();
-                        
-                        const textCenterY = rect.top - containerRect.top + (rect.height / 2) - 7;
-                        
-                        return {
-                            id: events[index].id,
-                            x: rect.left - containerRect.left,
-                            y: textCenterY,
-                            width: rect.width,
-                            height: rect.height
-                        };
-                    });
-                    setEventPositions(positions);
-                }
-            }, [events]);
-
-            // Calcular ancho del carrusel dinámicamente
-            const carouselWidth = events.length > 0 ? (events.length * 100) : 1400;
-            const slideWidth = events.length > 0 ? (100 / events.length) : 7.14;
-
-            // Inicializar primer evento - versión mejorada
+            // Inicializar primer evento
             useEffect(() => {
                 if (events.length > 0) {
                     const firstEvent = events[0];
@@ -666,298 +302,33 @@
                     setBrutalistEventData(firstEvent);
                     setCurrentEventIndex(0);
                     setCarouselOffset(0);
-                    setShowBrutalistInfo(true);
-                    
-                    // Esperar un momento para que se rendericen los elementos
-                    setTimeout(() => {
-                        if (eventPositions.length > 0) {
-                            const firstPosition = eventPositions[0];
-                            const firstWidth = getEventWidth(0);
-                            if (firstPosition) {
-                                setTagPosition({ x: firstPosition.x, y: firstPosition.y });
-                                setTagWidth(firstWidth);
-                                setIsTagVisible(true);
-                            }
-                        }
-                    }, 100);
                 }
-            }, [events, eventPositions]);
+            }, [events]);
 
-            // Obtener ancho del evento
-            const getEventWidth = (eventIndex) => {
-                if (tagsContainerRef.current) {
-                    const eventElement = tagsContainerRef.current.querySelectorAll('.event-text')[eventIndex];
-                    if (eventElement) {
-                        return eventElement.offsetWidth;
-                    }
-                }
-                return 60;
-            };
+            // Funciones simplificadas para navegación
+            const carouselWidth = events.length * 100;
+            const slideWidth = events.length > 0 ? (100 / events.length) : 16.67;
 
-            // Detectar cambio de línea con mayor precisión para mobile
-            const isLineBreak = (fromIndex, toIndex) => {
-                if (!eventPositions[fromIndex] || !eventPositions[toIndex]) return false;
-                
-                const fromY = eventPositions[fromIndex].y;
-                const toY = eventPositions[toIndex].y;
-                const yDifference = Math.abs(toY - fromY);
-                
-                return yDifference > 8;
-            };
-
-            // Detectar si estamos en el último elemento de una línea
-            const isLastInLine = (eventIndex) => {
-                if (eventIndex >= events.length - 1) return true;
-                
-                const currentY = eventPositions[eventIndex]?.y;
-                const nextY = eventPositions[eventIndex + 1]?.y;
-                
-                if (!currentY || !nextY) return false;
-                
-                return Math.abs(nextY - currentY) > 8;
-            };
-
-            // Detectar si estamos en el primer elemento de una línea
-            const isFirstInLine = (eventIndex) => {
-                if (eventIndex === 0) return true;
-                
-                const currentY = eventPositions[eventIndex]?.y;
-                const prevY = eventPositions[eventIndex - 1]?.y;
-                
-                if (!currentY || !prevY) return false;
-                
-                return Math.abs(currentY - prevY) > 8;
-            };
-
-            // Solución simple: desaparecer y aparecer para cambios de línea
-            const moveTagToEvent = (eventIndex) => {
-                if (eventPositions[eventIndex]) {
-                    const position = eventPositions[eventIndex];
-                    const width = getEventWidth(eventIndex);
-                    
-                    const hasLineBreak = isLineBreak(currentEventIndex, eventIndex);
-                    const isFromLastInLine = isLastInLine(currentEventIndex);
-                    const isToFirstInLine = isFirstInLine(eventIndex);
-                    
-                    const tagElement = document.querySelector('.sliding-tag');
-                    
-                    if (hasLineBreak && isFromLastInLine && isToFirstInLine) {
-                        if (tagElement) {
-                            tagElement.className = 'sliding-tag fade-out';
-                        }
-                        setIsTagVisible(false);
-                        
-                        setTimeout(() => {
-                            setTagPosition({ x: position.x, y: position.y });
-                            setTagWidth(width);
-                            
-                            setTimeout(() => {
-                                if (tagElement) {
-                                    tagElement.className = 'sliding-tag fade-in';
-                                }
-                                setIsTagVisible(true);
-                                setIsDraggingTag(false);
-                            }, 50);
-                        }, 300);
-                        
-                    } else {
-                        if (tagElement) {
-                            tagElement.className = 'sliding-tag smooth-horizontal';
-                        }
-                        
-                        setTagPosition({ x: position.x, y: position.y });
-                        setTagWidth(width);
-                        setIsTagVisible(true);
-                        setIsDraggingTag(false);
-                    }
-                }
-            };
-
-            // Mover carrusel
             const moveCarousel = (index) => {
                 const offset = -index * slideWidth;
                 setCarouselOffset(offset);
-                setIsDraggingCarousel(false);
             };
 
-            // Animar transición
             const animateEventTransition = (newEvent, newIndex) => {
-                moveTagToEvent(newIndex);
                 moveCarousel(newIndex);
                 setSelectedEvent(newEvent.id);
                 setBrutalistEventData(newEvent);
+                setCurrentEventIndex(newIndex);
             };
 
-            // Funciones de swipe (mantienen la misma lógica)
-            const handleTouchStart = (e) => {
-                setStartX(e.touches[0].clientX);
-                setStartY(e.touches[0].clientY);
-                setIsSwipping(true);
-                setIsDraggingTag(true);
-                setIsDraggingCarousel(true);
-            };
-
-            const handleTouchMove = (e) => {
-                if (!isSwipping || events.length === 0) return;
-                
-                const currentX = e.touches[0].clientX;
-                const currentY = e.touches[0].clientY;
-                const diffX = startX - currentX;
-                const diffY = startY - currentY;
-                
-                if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 5) {
-                    e.preventDefault();
-                    
-                    const deadZone = 15;
-                    const effectiveDiff = Math.abs(diffX) < deadZone ? 0 : diffX - (deadZone * Math.sign(diffX));
-                    
-                    const rawProgress = effectiveDiff / 140;
-                    const physicsProgress = Math.tanh(rawProgress) * 0.8;
-                    
-                    if (eventPositions.length > 0) {
-                        const direction = diffX > 0 ? 1 : -1;
-                        const currentPos = eventPositions[currentEventIndex];
-                        let targetIndex = currentEventIndex + direction;
-                        
-                        if (targetIndex >= events.length) targetIndex = 0;
-                        if (targetIndex < 0) targetIndex = events.length - 1;
-                        
-                        const targetPos = eventPositions[targetIndex];
-                        const currentWidth = getEventWidth(currentEventIndex);
-                        const targetWidth = getEventWidth(targetIndex);
-                        
-                        if (currentPos && targetPos) {
-                            const progressAbs = Math.min(Math.abs(physicsProgress), 1);
-                            const smoothProgress = progressAbs * progressAbs * (3 - 2 * progressAbs);
-                            
-                            const interpolatedPos = {
-                                x: currentPos.x + (targetPos.x - currentPos.x) * smoothProgress,
-                                y: currentPos.y + (targetPos.y - currentPos.y) * smoothProgress
-                            };
-                            
-                            const interpolatedWidth = currentWidth + (targetWidth - currentWidth) * smoothProgress;
-                            
-                            setTagPosition(interpolatedPos);
-                            setTagWidth(interpolatedWidth);
-                        }
-                    }
-                    
-                    const baseOffset = -currentEventIndex * slideWidth;
-                    const carouselEffectiveDiff = Math.abs(diffX) < deadZone ? 0 : diffX - (deadZone * Math.sign(diffX));
-                    const carouselPhysicsProgress = Math.tanh(carouselEffectiveDiff / 140) * 0.8;
-                    const dragOffset = carouselPhysicsProgress * slideWidth;
-                    setCarouselOffset(baseOffset - dragOffset);
-                }
-            };
-
-            const handleTouchEnd = (e) => {
-                if (!isSwipping || events.length === 0) return;
-                
-                const endX = e.changedTouches[0].clientX;
-                const diffX = startX - endX;
-                
-                setIsSwipping(false);
-                setIsDraggingTag(false);
-                setIsDraggingCarousel(false);
-                
-                if (Math.abs(diffX) > 45) {
-                    if (diffX > 0) {
-                        handleArrowDown();
-                    } else {
-                        handleArrowUp();
-                    }
-                } else {
-                    moveTagToEvent(currentEventIndex);
-                    moveCarousel(currentEventIndex);
-                }
-            };
-
-            const handleMouseStart = (e) => {
-                setStartX(e.clientX);
-                setStartY(e.clientY);
-                setIsSwipping(true);
-                setIsDraggingTag(true);
-                setIsDraggingCarousel(true);
-            };
-
-            const handleMouseMove = (e) => {
-                if (!isSwipping || events.length === 0) return;
-                
-                const currentX = e.clientX;
-                const diffX = startX - currentX;
-                const diffY = startY - e.clientY;
-                
-                if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 5) {
-                    e.preventDefault();
-                    
-                    const deadZone = 15;
-                    const effectiveDiff = Math.abs(diffX) < deadZone ? 0 : diffX - (deadZone * Math.sign(diffX));
-                    
-                    const rawProgress = effectiveDiff / 140;
-                    const physicsProgress = Math.tanh(rawProgress) * 0.8;
-                    
-                    if (eventPositions.length > 0) {
-                        const direction = diffX > 0 ? 1 : -1;
-                        const currentPos = eventPositions[currentEventIndex];
-                        let targetIndex = currentEventIndex + direction;
-                        
-                        if (targetIndex >= events.length) targetIndex = 0;
-                        if (targetIndex < 0) targetIndex = events.length - 1;
-                        
-                        const targetPos = eventPositions[targetIndex];
-                        const currentWidth = getEventWidth(currentEventIndex);
-                        const targetWidth = getEventWidth(targetIndex);
-                        
-                        if (currentPos && targetPos) {
-                            const progressAbs = Math.min(Math.abs(physicsProgress), 1);
-                            const smoothProgress = progressAbs * progressAbs * (3 - 2 * progressAbs);
-                            
-                            const interpolatedPos = {
-                                x: currentPos.x + (targetPos.x - currentPos.x) * smoothProgress,
-                                y: currentPos.y + (targetPos.y - currentPos.y) * smoothProgress
-                            };
-                            
-                            const interpolatedWidth = currentWidth + (targetWidth - currentWidth) * smoothProgress;
-                            
-                            setTagPosition(interpolatedPos);
-                            setTagWidth(interpolatedWidth);
-                        }
-                    }
-                    
-                    const baseOffset = -currentEventIndex * slideWidth;
-                    const carouselEffectiveDiff = Math.abs(diffX) < deadZone ? 0 : diffX - (deadZone * Math.sign(diffX));
-                    const carouselPhysicsProgress = Math.tanh(carouselEffectiveDiff / 140) * 0.8;
-                    const dragOffset = carouselPhysicsProgress * slideWidth;
-                    setCarouselOffset(baseOffset - dragOffset);
-                }
-            };
-
-            const handleMouseEnd = (e) => {
-                if (!isSwipping || events.length === 0) return;
-                
-                const endX = e.clientX;
-                const diffX = startX - endX;
-                
-                setIsSwipping(false);
-                setIsDraggingTag(false);
-                setIsDraggingCarousel(false);
-                
-                if (Math.abs(diffX) > 45) {
-                    if (diffX > 0) {
-                        handleArrowDown();
-                    } else {
-                        handleArrowUp();
-                    }
-                } else {
-                    moveTagToEvent(currentEventIndex);
-                    moveCarousel(currentEventIndex);
-                }
+            const handleEventTagClick = (event) => {
+                const eventIndex = events.findIndex(e => e.id === event.id);
+                animateEventTransition(event, eventIndex);
             };
 
             const handleArrowDown = () => {
                 if (events.length === 0) return;
                 const nextIndex = (currentEventIndex + 1) % events.length;
-                setCurrentEventIndex(nextIndex);
                 const nextEvent = events[nextIndex];
                 animateEventTransition(nextEvent, nextIndex);
             };
@@ -965,52 +336,46 @@
             const handleArrowUp = () => {
                 if (events.length === 0) return;
                 const prevIndex = currentEventIndex === 0 ? events.length - 1 : currentEventIndex - 1;
-                setCurrentEventIndex(prevIndex);
                 const prevEvent = events[prevIndex];
                 animateEventTransition(prevEvent, prevIndex);
             };
 
-            const handleEventTagClick = (event) => {
-                const eventIndex = events.findIndex(e => e.id === event.id);
-                setCurrentEventIndex(eventIndex);
-                animateEventTransition(event, eventIndex);
-                setShowBrutalistInfo(true);
+            // Touch events simplificados
+            const handleTouchStart = (e) => {
+                setStartX(e.touches[0].clientX);
+                setIsSwipping(true);
+            };
+
+            const handleTouchEnd = (e) => {
+                if (!isSwipping) return;
+                const endX = e.changedTouches[0].clientX;
+                const diffX = startX - endX;
+                setIsSwipping(false);
+                
+                if (Math.abs(diffX) > 50) {
+                    if (diffX > 0) {
+                        handleArrowDown();
+                    } else {
+                        handleArrowUp();
+                    }
+                }
             };
 
             if (loading) {
                 return (
                     <div className="min-h-screen bg-black overflow-hidden flex items-center justify-center" style={{ fontFamily: 'Space Mono, monospace' }}>
-                        <div className="loading-message">
-                            Cargando eventos...
-                        </div>
-                    </div>
-                );
-            }
-
-            if (error) {
-                return (
-                    <div className="min-h-screen bg-black overflow-hidden flex items-center justify-center" style={{ fontFamily: 'Space Mono, monospace' }}>
-                        <div className="loading-message">
-                            Error: {error}
-                            <br />
-                            <small>Asegúrate de que el archivo "Eventos.xlsx" esté en la misma carpeta</small>
-                        </div>
+                        <div className="loading-message">Cargando eventos...</div>
                     </div>
                 );
             }
 
             return (
                 <div className="min-h-screen bg-black overflow-hidden" style={{ fontFamily: 'Space Mono, monospace', padding: '10px' }}>
-                    {/* Gradiente de rayos horizontales en el 1/4 inferior */}
+                    {/* Gradiente */}
                     <div style={{
-                        position: 'fixed',
-                        bottom: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '25vh',
+                        position: 'fixed', bottom: 0, left: 0, width: '100%', height: '25vh',
                         background: 'linear-gradient(to top, #1a1a2e 0%, #16213e 30%, #0f3460 60%, rgba(15, 52, 96, 0.8) 80%, rgba(15, 52, 96, 0.3) 90%, transparent 100%)',
-                        zIndex: 1,
-                        pointerEvents: 'none'
+                        zIndex: 1, pointerEvents: 'none'
                     }} />
                     
                     {/* Logo RAMPA */}
@@ -1029,21 +394,9 @@
                         </svg>
                     </div>
 
-                    {/* Sección de Eventos */}
+                    {/* Lista de eventos */}
                     <div className="contributors-section">
                         <div className="contributors-tags" ref={tagsContainerRef}>
-                            {/* Etiqueta deslizante con physics */}
-                            {selectedEvent && eventPositions.length > 0 && isTagVisible && (
-                                <div 
-                                    className={`sliding-tag ${isDraggingTag ? 'dragging' : ''}`}
-                                    style={{
-                                        left: `${tagPosition.x}px`,
-                                        top: `${tagPosition.y}px`,
-                                        width: `${tagWidth}px`
-                                    }}
-                                />
-                            )}
-
                             {events.map((event, index) => (
                                 <div key={event.id} className="event-wrapper">
                                     <span 
@@ -1052,28 +405,18 @@
                                         title={`${event.date} - ${event.time} - ${event.venue}`}
                                     >
                                         {event.name}
-                                        {eventLikes[event.id] > 0 && (
-                                            <span className="event-likes-display">
-                                                +{eventLikes[event.id]}
-                                            </span>
-                                        )}
                                     </span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Overlay principal */}
+                    {/* Pantalla principal */}
                     <div 
-                        className={`brutalist-overlay ${showBrutalistInfo ? 'show' : ''}`}
+                        className="brutalist-overlay"
                         ref={overlayRef}
                         onTouchStart={handleTouchStart}
-                        onTouchMove={handleTouchMove}
                         onTouchEnd={handleTouchEnd}
-                        onMouseDown={handleMouseStart}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseEnd}
-                        onMouseLeave={handleMouseEnd}
                         style={{ userSelect: 'none', touchAction: 'pan-x' }}
                     >
                         {brutalistEventData && (
@@ -1111,66 +454,123 @@
                         )}
                     </div>
 
-                    {/* Botón de validación flotante con SVG personalizado */}
-                    {brutalistEventData && (
-                        <button 
-                            className={`like-button ${userLikes.has(brutalistEventData.id) ? 'liked' : ''}`}
-                            onClick={() => handleLikeEvent(brutalistEventData.id)}
-                            title={userLikes.has(brutalistEventData.id) ? 'Quitar validación' : 'Validar evento'}
-                        >
-                            <svg width="50" height="50" viewBox="0 0 260 273" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <g clipPath="url(#clip0_1549_5630)">
-                                    <path d="M260 0H0V273H260V0Z" fill="transparent"/>
-                                    <path d="M130.5 260C198.707 260 254 204.707 254 136.5C254 68.2928 198.707 13 130.5 13C62.2928 13 7 68.2928 7 136.5C7 204.707 62.2928 260 130.5 260Z" stroke="#FF0000" strokeWidth="8"/>
-                                    <path d="M211.5 136.021C211.5 140.716 207.695 144.521 203 144.521L150.5 144.521C143.873 144.521 138.5 149.893 138.5 156.521V209.021C138.5 213.715 134.695 217.521 130 217.521C125.306 217.521 121.5 213.715 121.499 209.021V156.521C121.5 149.893 116.128 144.521 109.501 144.521L56.9997 144.521C52.3057 144.521 48.5001 140.715 48.4997 136.021C48.5001 131.326 52.3057 127.521 56.9999 127.521L109.5 127.521C116.128 127.52 121.5 122.148 121.5 115.521L121.5 63.0208C121.5 58.3264 125.306 54.5209 130 54.5209C134.694 54.5209 138.5 58.3264 138.5 63.0209L138.5 115.521C138.5 122.149 143.872 127.521 150.5 127.52L203 127.521C207.695 127.521 211.5 131.327 211.5 136.021Z" fill="#FF0000"/>
-                                </g>
-                                <defs>
-                                    <clipPath id="clip0_1549_5630">
-                                        <rect width="260" height="273" fill="white"/>
-                                    </clipPath>
-                                </defs>
-                            </svg>
-                            {eventLikes[brutalistEventData.id] > 0 && (
-                                <div className="like-count-overlay">
-                                    {eventLikes[brutalistEventData.id]}
-                                </div>
-                            )}
-                        </button>
-                    )}
+                    {/* Botón para agregar evento */}
+                    <button 
+                        className={`add-event-button ${showForm ? 'active' : ''}`}
+                        onClick={toggleForm}
+                        title="Agregar nuevo evento"
+                    >
+                        <svg width="50" height="50" viewBox="0 0 260 273" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <g clipPath="url(#clip0_1549_5630)">
+                                <path d="M260 0H0V273H260V0Z" fill="transparent"/>
+                                <path d="M130.5 260C198.707 260 254 204.707 254 136.5C254 68.2928 198.707 13 130.5 13C62.2928 13 7 68.2928 7 136.5C7 204.707 62.2928 260 130.5 260Z" stroke="#FF0000" strokeWidth="8"/>
+                                <path d="M211.5 136.021C211.5 140.716 207.695 144.521 203 144.521L150.5 144.521C143.873 144.521 138.5 149.893 138.5 156.521V209.021C138.5 213.715 134.695 217.521 130 217.521C125.306 217.521 121.5 213.715 121.499 209.021V156.521C121.5 149.893 116.128 144.521 109.501 144.521L56.9997 144.521C52.3057 144.521 48.5001 140.715 48.4997 136.021C48.5001 131.326 52.3057 127.521 56.9999 127.521L109.5 127.521C116.128 127.52 121.5 122.148 121.5 115.521L121.5 63.0208C121.5 58.3264 125.306 54.5209 130 54.5209C134.694 54.5209 138.5 58.3264 138.5 63.0209L138.5 115.521C138.5 122.149 143.872 127.521 150.5 127.52L203 127.521C207.695 127.521 211.5 131.327 211.5 136.021Z" fill="#FF0000"/>
+                            </g>
+                            <defs>
+                                <clipPath id="clip0_1549_5630">
+                                    <rect width="260" height="273" fill="white"/>
+                                </clipPath>
+                            </defs>
+                        </svg>
+                    </button>
 
-                    {/* Barra de scroll inferior */}
+                    {/* Formulario modal */}
+                    <div className={`event-form-overlay ${showForm ? 'visible' : ''}`}>
+                        <form className="event-form" onSubmit={handleSubmitEvent}>
+                            <h2 className="form-title">Agregar Evento</h2>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Nombre del Evento *</label>
+                                <input 
+                                    type="text"
+                                    className="form-input"
+                                    value={formData.nombre}
+                                    onChange={(e) => handleFormChange('nombre', e.target.value)}
+                                    placeholder="Ej: Baum Sessions"
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Fecha *</label>
+                                <input 
+                                    type="date"
+                                    className="form-input"
+                                    value={formData.fecha}
+                                    onChange={(e) => handleFormChange('fecha', e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Hora *</label>
+                                <input 
+                                    type="time"
+                                    className="form-input"
+                                    value={formData.hora}
+                                    onChange={(e) => handleFormChange('hora', e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Lugar / Artistas</label>
+                                <input 
+                                    type="text"
+                                    className="form-input"
+                                    value={formData.lugar}
+                                    onChange={(e) => handleFormChange('lugar', e.target.value)}
+                                    placeholder="Ej: KLANGKUENSTLER, ÂVALL"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Categoría</label>
+                                <select 
+                                    className="form-select"
+                                    value={formData.categoria}
+                                    onChange={(e) => handleFormChange('categoria', e.target.value)}
+                                >
+                                    <option value="RAVE">RAVE</option>
+                                    <option value="FESTIVAL">FESTIVAL</option>
+                                    <option value="CLUB">CLUB</option>
+                                    <option value="CONCIERTO">CONCIERTO</option>
+                                    <option value="EVENTO">EVENTO</option>
+                                </select>
+                            </div>
+
+                            <div className="form-buttons">
+                                <button 
+                                    type="button" 
+                                    className="form-button"
+                                    onClick={toggleForm}
+                                    disabled={isSubmitting}
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    className="form-button submit"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Enviando...' : 'Enviar'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    {/* Barra inferior */}
                     <div style={{
-                        position: 'fixed',
-                        bottom: 0,
-                        left: 0,
-                        width: '100vw',
-                        height: '19px',
-                        background: '#FD7B1E',
-                        zIndex: 100,
-                        overflow: 'hidden',
-                        display: 'flex',
-                        alignItems: 'center'
+                        position: 'fixed', bottom: 0, left: 0, width: '100vw', height: '19px',
+                        background: '#FD7B1E', zIndex: 100, overflow: 'hidden', display: 'flex', alignItems: 'center'
                     }}>
                         <div style={{
-                            whiteSpace: 'nowrap',
-                            color: 'black',
-                            background: '#FD7B1E',
-                            fontSize: '10px',
-                            lineHeight: '1.0',
-                            animation: 'scroll-left 30s linear infinite',
-                            paddingLeft: '100%',
-                            paddingTop: '2px',
-                            paddingBottom: '2px',
-                            fontWeight: 300,
-                            letterSpacing: '0.01em',
-                            fontFamily: 'Inter, sans-serif',
-                            filter: 'blur(0.3px)',
-                            minWidth: '20px',
-                            boxSizing: 'border-box',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transform: 'translateY(0px)'
+                            whiteSpace: 'nowrap', color: 'black', background: '#FD7B1E', fontSize: '10px',
+                            lineHeight: '1.0', animation: 'scroll-left 30s linear infinite', paddingLeft: '100%',
+                            paddingTop: '2px', paddingBottom: '2px', fontWeight: 300, letterSpacing: '0.01em',
+                            fontFamily: 'Inter, sans-serif', filter: 'blur(0.3px)', minWidth: '20px',
+                            boxSizing: 'border-box', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', transform: 'translateY(0px)'
                         }}>
                             Publicá tu evento en Rampa → Escribinos a hola@rampa.world
                         </div>
