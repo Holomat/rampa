@@ -175,8 +175,8 @@
             const [isTagVisible, setIsTagVisible] = useState(true);
             const tagsContainerRef = useRef(null);
 
-            // URL del Google Apps Script - REEMPLAZA CON TU URL REAL
-            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhz-kKKph9vFijQIjyZP5NvepEwjoFf7vZxCCckbvM7LYpFKa3XI1W1CCRAriVtrPYTA/exec';
+            // ✅ URL ACTUALIZADA DEL GOOGLE APPS SCRIPT
+            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4mM0Vc-DylemmSQEFFzFxqEyhe-YAk-cpoCehlVHXSdeSFN9mwB-VYiPEyGn4__98cg/exec';
 
             // Función para manejar cambios en el formulario
             const handleFormChange = (field, value) => {
@@ -198,10 +198,7 @@
                         method: 'POST',
                         mode: 'no-cors', // Importante para Google Apps Script
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'addEvent',
-                            ...eventData
-                        })
+                        body: JSON.stringify(eventData)
                     });
                     return { success: true };
                 } catch (error) {
