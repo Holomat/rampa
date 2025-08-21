@@ -78,10 +78,10 @@
             z-index: 10; filter: blur(0.3px); line-height: 1.0; box-sizing: border-box;
         }
         .event-text:hover { color: #D4CFC2; }
-        .event-text.has-tag { color: #FD7B1E; }
+        .event-text.has-tag { color: black; }
 
         .add-event-button {
-            position: fixed; right: 20px; bottom: 40vh; width: 50px; height: 50px; cursor: pointer;
+            position: fixed; right: 20px; bottom: calc(40vh - 48px); width: 50px; height: 50px; cursor: pointer;
             transition: all 0.3s ease; pointer-events: auto; z-index: 999; background: transparent;
             border: none; padding: 0; opacity: 0.8;
         }
@@ -175,10 +175,12 @@
             const [isTagVisible, setIsTagVisible] = useState(true);
             const tagsContainerRef = useRef(null);
 
+            // Función para manejar cambios en el formulario
             const handleFormChange = (field, value) => {
                 setFormData(prev => ({ ...prev, [field]: value }));
             };
 
+            // Función para abrir/cerrar formulario
             const toggleForm = () => {
                 setShowForm(!showForm);
                 if (!showForm) {
@@ -186,13 +188,15 @@
                 }
             };
 
+            // Función para enviar evento a Google Sheets (con aprobación)
             const submitEventToGoogleSheets = async (eventData) => {
+                // ⚠️ IMPORTANTE: Cambia esta URL por la de tu Google Apps Script
                 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/TU_SCRIPT_ID_AQUI/exec';
                 
                 try {
                     const response = await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
-                        mode: 'no-cors',
+                        mode: 'no-cors', // Importante para Google Apps Script
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(eventData)
                     });
@@ -203,6 +207,7 @@
                 }
             };
 
+            // Función para formatear fecha
             const formatDate = (dateStr) => {
                 if (!dateStr) return '';
                 if (dateStr.includes('.')) return dateStr;
@@ -218,6 +223,7 @@
                 }
             };
 
+            // Función para obtener día de la semana
             const getDayOfWeek = (dateStr) => {
                 try {
                     const date = new Date(dateStr);
@@ -228,6 +234,7 @@
                 }
             };
 
+            // Función para manejar envío del formulario
             const handleSubmitEvent = async (e) => {
                 e.preventDefault();
                 
@@ -250,23 +257,13 @@
                         timestamp: new Date().toISOString()
                     };
                     
+                    // Enviar a Google Sheets para aprobación
                     await submitEventToGoogleSheets(eventToSubmit);
                     
-                    const newEvent = {
-                        id: Date.now(),
-                        name: formData.nombre,
-                        date: formatDate(formData.fecha),
-                        time: formData.hora,
-                        venue: formData.lugar,
-                        category: formData.categoria,
-                        day: day
-                    };
-                    
-                    setEvents(prev => [...prev, newEvent]);
-                    
+                    // Mostrar mensaje de éxito (pendiente de aprobación)
                     const message = document.createElement('div');
                     message.className = 'success-message visible';
-                    message.textContent = '¡Evento enviado correctamente!';
+                    message.textContent = '¡Evento enviado para revisión!';
                     document.body.appendChild(message);
                     
                     setTimeout(() => message.remove(), 3000);
@@ -280,19 +277,86 @@
                 }
             };
 
-            // Cargar eventos de ejemplo
+            // Cargar eventos desde Excel (como respaldo) o desde Google Sheets aprobados
             useEffect(() => {
-                const exampleEvents = [
-                    { id: 1, name: "Phonoteque", date: "17.08.25", time: "23:00", venue: "FLHEZ, FEFIO, NICOLÁS ARIN B2B STONEM", category: "RAVE", day: "DOMINGO" },
-                    { id: 2, name: "Quebrada Festival", date: "22.08.25", time: "20:00", venue: "NICOLÁS JAAR, ANTHEA, LUCIANO SUPERVIELLE", category: "FESTIVAL", day: "VIERNES" },
-                    { id: 3, name: "Baum Sessions", date: "23.08.25", time: "22:00", venue: "KLANGKUENSTLER, ÂVALL", category: "RAVE", day: "SÁBADO" },
-                    { id: 4, name: "No Sleep Club", date: "24.08.25", time: "23:00", venue: "DANNY AVILA, LOCAL RESIDENTS", category: "CLUB", day: "DOMINGO" },
-                    { id: 5, name: "Underworld MVD", date: "29.08.25", time: "23:30", venue: "BEN KLOCK, MARCEL DETTMANN", category: "RAVE", day: "VIERNES" },
-                    { id: 6, name: "Electric Park", date: "30.08.25", time: "18:00", venue: "CHARLOTTE DE WITTE, AMELIE LENS", category: "FESTIVAL", day: "SÁBADO" }
-                ];
-                setEvents(exampleEvents);
-                setLoading(false);
+                const loadEvents = async () => {
+                    try {
+                        setLoading(true);
+                        
+                        // Intentar cargar eventos aprobados desde Google Sheets
+                        // Descomenta esto cuando tengas configurado Google Apps Script:
+                        /*
+                        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/TU_SCRIPT_ID_AQUI/exec';
+                        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getApprovedEvents`);
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.success && data.events.length > 0) {
+                                const formattedEvents = data.events.map((event, index) => ({
+                                    id: index + 1,
+                                    name: event.Nombre || event.nombre,
+                                    date: event.Fecha || event.fecha,
+                                    time: event.Hora || event.hora,
+                                    venue: event.Lugar || event.lugar,
+                                    category: event.Categoría || event.categoria,
+                                    day: event.Día || event.dia
+                                }));
+                                setEvents(formattedEvents);
+                                setLoading(false);
+                                return;
+                            }
+                        }
+                        */
+                        
+                        // Fallback: Usar eventos de ejemplo si no hay Google Sheets configurado
+                        const exampleEvents = [
+                            { id: 1, name: "Phonoteque", date: "17.08.25", time: "23:00", venue: "FLHEZ, FEFIO, NICOLÁS ARIN B2B STONEM", category: "RAVE", day: "DOMINGO" },
+                            { id: 2, name: "Quebrada Festival", date: "22.08.25", time: "20:00", venue: "NICOLÁS JAAR, ANTHEA, LUCIANO SUPERVIELLE", category: "FESTIVAL", day: "VIERNES" },
+                            { id: 3, name: "Baum Sessions", date: "23.08.25", time: "22:00", venue: "KLANGKUENSTLER, ÂVALL", category: "RAVE", day: "SÁBADO" },
+                            { id: 4, name: "No Sleep Club", date: "24.08.25", time: "23:00", venue: "DANNY AVILA, LOCAL RESIDENTS", category: "CLUB", day: "DOMINGO" },
+                            { id: 5, name: "Underworld MVD", date: "29.08.25", time: "23:30", venue: "BEN KLOCK, MARCEL DETTMANN", category: "RAVE", day: "VIERNES" },
+                            { id: 6, name: "Electric Park", date: "30.08.25", time: "18:00", venue: "CHARLOTTE DE WITTE, AMELIE LENS", category: "FESTIVAL", day: "SÁBADO" },
+                            { id: 7, name: "Mute Night", date: "05.09.25", time: "23:00", venue: "TALE OF US, MIND AGAINST", category: "RAVE", day: "VIERNES" },
+                            { id: 8, name: "Cosmic Rave", date: "06.09.25", time: "22:30", venue: "MACEO PLEX, JORIS VOORN", category: "RAVE", day: "SÁBADO" }
+                        ];
+                        setEvents(exampleEvents);
+                        setLoading(false);
+                        
+                    } catch (error) {
+                        console.error('Error cargando eventos:', error);
+                        // Usar eventos de ejemplo en caso de error
+                        const exampleEvents = [
+                            { id: 1, name: "Phonoteque", date: "17.08.25", time: "23:00", venue: "FLHEZ, FEFIO, NICOLÁS ARIN", category: "RAVE", day: "DOMINGO" },
+                            { id: 2, name: "Quebrada Festival", date: "22.08.25", time: "20:00", venue: "NICOLÁS JAAR, ANTHEA", category: "FESTIVAL", day: "VIERNES" }
+                        ];
+                        setEvents(exampleEvents);
+                        setLoading(false);
+                    }
+                };
+
+                loadEvents();
             }, []);
+
+            // Calcular posiciones de eventos
+            useEffect(() => {
+                if (tagsContainerRef.current && events.length > 0) {
+                    const container = tagsContainerRef.current;
+                    const eventElements = container.querySelectorAll('.event-text');
+                    const positions = Array.from(eventElements).map((element, index) => {
+                        const rect = element.getBoundingClientRect();
+                        const containerRect = container.getBoundingClientRect();
+                        
+                        return {
+                            id: events[index].id,
+                            x: rect.left - containerRect.left,
+                            y: rect.top - containerRect.top + (rect.height / 2) - 7,
+                            width: rect.width,
+                            height: rect.height
+                        };
+                    });
+                    setEventPositions(positions);
+                }
+            }, [events]);
 
             // Inicializar primer evento
             useEffect(() => {
@@ -302,10 +366,22 @@
                     setBrutalistEventData(firstEvent);
                     setCurrentEventIndex(0);
                     setCarouselOffset(0);
+                    
+                    // Configurar etiqueta deslizante
+                    setTimeout(() => {
+                        if (eventPositions.length > 0) {
+                            const firstPosition = eventPositions[0];
+                            if (firstPosition) {
+                                setTagPosition({ x: firstPosition.x, y: firstPosition.y });
+                                setTagWidth(firstPosition.width);
+                                setIsTagVisible(true);
+                            }
+                        }
+                    }, 100);
                 }
-            }, [events]);
+            }, [events, eventPositions]);
 
-            // Funciones simplificadas para navegación
+            // Funciones para navegación
             const carouselWidth = events.length * 100;
             const slideWidth = events.length > 0 ? (100 / events.length) : 16.67;
 
@@ -314,8 +390,18 @@
                 setCarouselOffset(offset);
             };
 
+            const moveTagToEvent = (eventIndex) => {
+                if (eventPositions[eventIndex]) {
+                    const position = eventPositions[eventIndex];
+                    setTagPosition({ x: position.x, y: position.y });
+                    setTagWidth(position.width);
+                    setIsTagVisible(true);
+                }
+            };
+
             const animateEventTransition = (newEvent, newIndex) => {
                 moveCarousel(newIndex);
+                moveTagToEvent(newIndex);
                 setSelectedEvent(newEvent.id);
                 setBrutalistEventData(newEvent);
                 setCurrentEventIndex(newIndex);
@@ -340,7 +426,7 @@
                 animateEventTransition(prevEvent, prevIndex);
             };
 
-            // Touch events simplificados
+            // Touch events para navegación
             const handleTouchStart = (e) => {
                 setStartX(e.touches[0].clientX);
                 setIsSwipping(true);
@@ -371,7 +457,7 @@
 
             return (
                 <div className="min-h-screen bg-black overflow-hidden" style={{ fontFamily: 'Space Mono, monospace', padding: '10px' }}>
-                    {/* Gradiente */}
+                    {/* Gradiente de fondo */}
                     <div style={{
                         position: 'fixed', bottom: 0, left: 0, width: '100%', height: '25vh',
                         background: 'linear-gradient(to top, #1a1a2e 0%, #16213e 30%, #0f3460 60%, rgba(15, 52, 96, 0.8) 80%, rgba(15, 52, 96, 0.3) 90%, transparent 100%)',
@@ -394,9 +480,21 @@
                         </svg>
                     </div>
 
-                    {/* Lista de eventos */}
+                    {/* Lista de eventos con etiqueta deslizante */}
                     <div className="contributors-section">
                         <div className="contributors-tags" ref={tagsContainerRef}>
+                            {/* Etiqueta deslizante */}
+                            {selectedEvent && eventPositions.length > 0 && isTagVisible && (
+                                <div 
+                                    className={`sliding-tag ${isDraggingTag ? 'dragging' : ''}`}
+                                    style={{
+                                        left: `${tagPosition.x}px`,
+                                        top: `${tagPosition.y}px`,
+                                        width: `${tagWidth}px`
+                                    }}
+                                />
+                            )}
+
                             {events.map((event, index) => (
                                 <div key={event.id} className="event-wrapper">
                                     <span 
@@ -411,7 +509,7 @@
                         </div>
                     </div>
 
-                    {/* Pantalla principal */}
+                    {/* Pantalla principal de eventos */}
                     <div 
                         className="brutalist-overlay"
                         ref={overlayRef}
@@ -474,7 +572,7 @@
                         </svg>
                     </button>
 
-                    {/* Formulario modal */}
+                    {/* Formulario modal para agregar evento */}
                     <div className={`event-form-overlay ${showForm ? 'visible' : ''}`}>
                         <form className="event-form" onSubmit={handleSubmitEvent}>
                             <h2 className="form-title">Agregar Evento</h2>
@@ -559,22 +657,7 @@
                         </form>
                     </div>
 
-                    {/* Barra inferior */}
-                    <div style={{
-                        position: 'fixed', bottom: 0, left: 0, width: '100vw', height: '19px',
-                        background: '#FD7B1E', zIndex: 100, overflow: 'hidden', display: 'flex', alignItems: 'center'
-                    }}>
-                        <div style={{
-                            whiteSpace: 'nowrap', color: 'black', background: '#FD7B1E', fontSize: '10px',
-                            lineHeight: '1.0', animation: 'scroll-left 30s linear infinite', paddingLeft: '100%',
-                            paddingTop: '2px', paddingBottom: '2px', fontWeight: 300, letterSpacing: '0.01em',
-                            fontFamily: 'Inter, sans-serif', filter: 'blur(0.3px)', minWidth: '20px',
-                            boxSizing: 'border-box', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', transform: 'translateY(0px)'
-                        }}>
-                            Publicá tu evento en Rampa → Escribinos a hola@rampa.world
-                        </div>
-                    </div>
+                    {/* Barra inferior con texto desplazante - REMOVIDA */}
                 </div>
             );
         };
