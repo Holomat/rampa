@@ -190,8 +190,8 @@
 
             // Función para enviar evento a Google Sheets (con aprobación)
             const submitEventToGoogleSheets = async (eventData) => {
-                // ⚠️ IMPORTANTE: Cambia esta URL por la de tu Google Apps Script
-                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/TU_SCRIPT_ID_AQUI/exec';
+                // URL de tu Google Apps Script configurada
+                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwxC0WXeL-LeSo-7Gp8-ImdsvA4JflgFKO5PWyA00E6PhfqEZMquxRwMpoFtZg-s-E_3g/exec';
                 
                 try {
                     const response = await fetch(GOOGLE_SCRIPT_URL, {
@@ -284,9 +284,7 @@
                         setLoading(true);
                         
                         // Intentar cargar eventos aprobados desde Google Sheets
-                        // Descomenta esto cuando tengas configurado Google Apps Script:
-                        /*
-                        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/TU_SCRIPT_ID_AQUI/exec';
+                        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwxC0WXeL-LeSo-7Gp8-ImdsvA4JflgFKO5PWyA00E6PhfqEZMquxRwMpoFtZg-s-E_3g/exec';
                         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getApprovedEvents`);
                         
                         if (response.ok) {
@@ -306,7 +304,6 @@
                                 return;
                             }
                         }
-                        */
                         
                         // Fallback: Usar eventos de ejemplo si no hay Google Sheets configurado
                         const exampleEvents = [
