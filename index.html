@@ -175,6 +175,9 @@
             const [isTagVisible, setIsTagVisible] = useState(true);
             const tagsContainerRef = useRef(null);
 
+            // URL del Google Apps Script - REEMPLAZA CON TU URL REAL
+            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhz-kKKph9vFijQIjyZP5NvepEwjoFf7vZxCCckbvM7LYpFKa3XI1W1CCRAriVtrPYTA/exec';
+
             // Función para manejar cambios en el formulario
             const handleFormChange = (field, value) => {
                 setFormData(prev => ({ ...prev, [field]: value }));
@@ -188,22 +191,48 @@
                 }
             };
 
-            // Función para enviar evento a Google Sheets (con aprobación)
+            // Función para enviar evento a Google Sheets (para aprobación)
             const submitEventToGoogleSheets = async (eventData) => {
-                // URL más reciente de tu Google Apps Script
-                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhz-kKKph9vFijQIjyZP5NvepEwjoFf7vZxCCckbvM7LYpFKa3XI1W1CCRAriVtrPYTA/exec';
-                
                 try {
                     const response = await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
                         mode: 'no-cors', // Importante para Google Apps Script
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(eventData)
+                        body: JSON.stringify({
+                            action: 'addEvent',
+                            ...eventData
+                        })
                     });
                     return { success: true };
                 } catch (error) {
                     console.error('Error enviando a Google Sheets:', error);
                     throw error;
+                }
+            };
+
+            // Función para cargar eventos aprobados desde Google Sheets
+            const loadEventsFromGoogleSheets = async () => {
+                try {
+                    const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getApprovedEvents`);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.events && data.events.length > 0) {
+                            return data.events.map((event, index) => ({
+                                id: index + 1,
+                                name: event.Nombre || event.nombre || 'Sin título',
+                                date: formatDate(event.Fecha || event.fecha),
+                                time: (event.Hora || event.hora || '00:00').substring(0, 5),
+                                venue: event.Lugar || event.lugar || '',
+                                category: event.Categoría || event.categoria || 'EVENTO',
+                                day: event.Día || event.dia || getDayOfWeek(event.Fecha || event.fecha)
+                            }));
+                        }
+                    }
+                    return null;
+                } catch (error) {
+                    console.error('Error cargando desde Google Sheets:', error);
+                    return null;
                 }
             };
 
@@ -214,6 +243,8 @@
                 
                 try {
                     const date = new Date(dateStr);
+                    if (isNaN(date.getTime())) return dateStr;
+                    
                     const day = String(date.getDate()).padStart(2, '0');
                     const month = String(date.getMonth() + 1).padStart(2, '0');
                     const year = String(date.getFullYear()).slice(-2);
@@ -227,6 +258,8 @@
             const getDayOfWeek = (dateStr) => {
                 try {
                     const date = new Date(dateStr);
+                    if (isNaN(date.getTime())) return 'FECHA';
+                    
                     const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
                     return days[date.getDay()];
                 } catch (e) {
@@ -260,14 +293,17 @@
                     // Enviar a Google Sheets para aprobación
                     await submitEventToGoogleSheets(eventToSubmit);
                     
-                    // Mostrar mensaje de éxito (pendiente de aprobación)
+                    // Mostrar mensaje de éxito
                     const message = document.createElement('div');
                     message.className = 'success-message visible';
                     message.textContent = '¡Evento enviado para revisión!';
                     document.body.appendChild(message);
                     
-                    setTimeout(() => message.remove(), 3000);
-                    setShowForm(false);
+                    setTimeout(() => {
+                        message.remove();
+                        setShowForm(false);
+                        setFormData({ nombre: '', fecha: '', hora: '', lugar: '', categoria: 'RAVE' });
+                    }, 3000);
                     
                 } catch (error) {
                     alert('Error enviando el evento. Intenta nuevamente.');
@@ -277,56 +313,41 @@
                 }
             };
 
-            // Cargar eventos desde Excel (como respaldo) o desde Google Sheets aprobados
+            // Cargar eventos al iniciar
             useEffect(() => {
                 const loadEvents = async () => {
                     try {
                         setLoading(true);
                         
-                        // Intentar cargar eventos aprobados desde Google Sheets
-                        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhz-kKKph9vFijQIjyZP5NvepEwjoFf7vZxCCckbvM7LYpFKa3XI1W1CCRAriVtrPYTA/exec';
-                        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getApprovedEvents`);
+                        // Intentar cargar desde Google Sheets primero
+                        const googleEvents = await loadEventsFromGoogleSheets();
                         
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (data.success && data.events.length > 0) {
-                                const formattedEvents = data.events.map((event, index) => ({
-                                    id: index + 1,
-                                    name: event.Nombre || event.nombre,
-                                    date: event.Fecha || event.fecha,
-                                    time: event.Hora || event.hora,
-                                    venue: event.Lugar || event.lugar,
-                                    category: event.Categoría || event.categoria,
-                                    day: event.Día || event.dia
-                                }));
-                                setEvents(formattedEvents);
-                                setLoading(false);
-                                return;
-                            }
+                        if (googleEvents && googleEvents.length > 0) {
+                            setEvents(googleEvents);
+                        } else {
+                            // Fallback: eventos de ejemplo
+                            const exampleEvents = [
+                                { id: 1, name: "Phonoteque", date: "17.08.25", time: "23:00", venue: "FLHEZ, FEFIO, NICOLÁS ARIN B2B STONEM", category: "RAVE", day: "DOMINGO" },
+                                { id: 2, name: "Quebrada Festival", date: "22.08.25", time: "20:00", venue: "NICOLÁS JAAR, ANTHEA, LUCIANO SUPERVIELLE", category: "FESTIVAL", day: "VIERNES" },
+                                { id: 3, name: "Baum Sessions", date: "23.08.25", time: "22:00", venue: "KLANGKUENSTLER, ÂVALL", category: "RAVE", day: "SÁBADO" },
+                                { id: 4, name: "No Sleep Club", date: "24.08.25", time: "23:00", venue: "DANNY AVILA, LOCAL RESIDENTS", category: "CLUB", day: "DOMINGO" },
+                                { id: 5, name: "Underworld MVD", date: "29.08.25", time: "23:30", venue: "BEN KLOCK, MARCEL DETTMANN", category: "RAVE", day: "VIERNES" },
+                                { id: 6, name: "Electric Park", date: "30.08.25", time: "18:00", venue: "CHARLOTTE DE WITTE, AMELIE LENS", category: "FESTIVAL", day: "SÁBADO" },
+                                { id: 7, name: "Mute Night", date: "05.09.25", time: "23:00", venue: "TALE OF US, MIND AGAINST", category: "RAVE", day: "VIERNES" },
+                                { id: 8, name: "Cosmic Rave", date: "06.09.25", time: "22:30", venue: "MACEO PLEX, JORIS VOORN", category: "RAVE", day: "SÁBADO" }
+                            ];
+                            setEvents(exampleEvents);
                         }
-                        
-                        // Fallback: Usar eventos de ejemplo si no hay Google Sheets configurado
-                        const exampleEvents = [
-                            { id: 1, name: "Phonoteque", date: "17.08.25", time: "23:00", venue: "FLHEZ, FEFIO, NICOLÁS ARIN B2B STONEM", category: "RAVE", day: "DOMINGO" },
-                            { id: 2, name: "Quebrada Festival", date: "22.08.25", time: "20:00", venue: "NICOLÁS JAAR, ANTHEA, LUCIANO SUPERVIELLE", category: "FESTIVAL", day: "VIERNES" },
-                            { id: 3, name: "Baum Sessions", date: "23.08.25", time: "22:00", venue: "KLANGKUENSTLER, ÂVALL", category: "RAVE", day: "SÁBADO" },
-                            { id: 4, name: "No Sleep Club", date: "24.08.25", time: "23:00", venue: "DANNY AVILA, LOCAL RESIDENTS", category: "CLUB", day: "DOMINGO" },
-                            { id: 5, name: "Underworld MVD", date: "29.08.25", time: "23:30", venue: "BEN KLOCK, MARCEL DETTMANN", category: "RAVE", day: "VIERNES" },
-                            { id: 6, name: "Electric Park", date: "30.08.25", time: "18:00", venue: "CHARLOTTE DE WITTE, AMELIE LENS", category: "FESTIVAL", day: "SÁBADO" },
-                            { id: 7, name: "Mute Night", date: "05.09.25", time: "23:00", venue: "TALE OF US, MIND AGAINST", category: "RAVE", day: "VIERNES" },
-                            { id: 8, name: "Cosmic Rave", date: "06.09.25", time: "22:30", venue: "MACEO PLEX, JORIS VOORN", category: "RAVE", day: "SÁBADO" }
-                        ];
-                        setEvents(exampleEvents);
-                        setLoading(false);
                         
                     } catch (error) {
                         console.error('Error cargando eventos:', error);
-                        // Usar eventos de ejemplo en caso de error
-                        const exampleEvents = [
+                        // Usar eventos de ejemplo como último recurso
+                        const fallbackEvents = [
                             { id: 1, name: "Phonoteque", date: "17.08.25", time: "23:00", venue: "FLHEZ, FEFIO, NICOLÁS ARIN", category: "RAVE", day: "DOMINGO" },
                             { id: 2, name: "Quebrada Festival", date: "22.08.25", time: "20:00", venue: "NICOLÁS JAAR, ANTHEA", category: "FESTIVAL", day: "VIERNES" }
                         ];
-                        setEvents(exampleEvents);
+                        setEvents(fallbackEvents);
+                    } finally {
                         setLoading(false);
                     }
                 };
@@ -489,7 +510,9 @@
                                         top: `${tagPosition.y}px`,
                                         width: `${tagWidth}px`
                                     }}
-                                />
+                                >
+                                    {brutalistEventData?.category || 'EVENTO'}
+                                </div>
                             )}
 
                             {events.map((event, index) => (
@@ -653,8 +676,6 @@
                             </div>
                         </form>
                     </div>
-
-                    {/* Barra inferior con texto desplazante - REMOVIDA */}
                 </div>
             );
         };
