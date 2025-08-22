@@ -28,7 +28,7 @@
 
         .brutalist-text {
             font-family: 'Bebas Neue', sans-serif; font-weight: 400; color: #B5C4D8; text-align: center;
-            filter: blur(0.3px); padding: 0; margin: 0; line-height: 0.85; letter-spacing: -0.06em;
+            padding: 0; margin: 0; line-height: 0.85; letter-spacing: -0.06em;
         }
         .event-slide .brutalist-text.day { font-size: 21px !important; margin-bottom: 4px; }
         .event-slide .brutalist-text.date {
@@ -40,7 +40,7 @@
             width: 72px !important; height: 72px !important; border: 2px solid #B5C4D8; border-radius: 50%;
             display: flex; align-items: center; justify-content: center; transform: scaleY(0.6); position: relative;
         }
-        .day-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scaleY(1.67); filter: blur(0.2px); }
+        .day-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scaleY(1.67); }
         .event-slide .brutalist-text.eventname {
             font-family: 'New Title', 'Bebas Neue', sans-serif !important; font-size: 116px !important; font-weight: 700 !important;
             margin-bottom: 4px; line-height: 0.85; letter-spacing: -0.01em; text-transform: uppercase;
@@ -49,7 +49,7 @@
         .event-slide .brutalist-text.venue-text { font-size: 35px !important; padding-top: 5px !important; }
 
         .logo-section { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 998; pointer-events: none; }
-        .rampa-logo { width: 120px; height: auto; color: #B5C4D8; filter: blur(0.3px); }
+        .rampa-logo { width: 120px; height: auto; color: #B5C4D8; }
 
         .contributors-section {
             position: fixed; bottom: 10px; left: 10px; right: 10px; z-index: 998; font-family: 'Inter', sans-serif;
@@ -60,7 +60,7 @@
 
         .sliding-tag {
             position: absolute; background: #B5C4D8; border: none; border-radius: 12px; padding: 2px 4px; font-size: 10px;
-            font-weight: 300; color: black; white-space: nowrap; pointer-events: none; z-index: 5; filter: blur(0.3px);
+            font-weight: 300; color: black; white-space: nowrap; pointer-events: none; z-index: 5;
             transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1); opacity: 0; min-width: 20px; box-sizing: border-box;
             display: flex; align-items: center; justify-content: center; height: 14px; transform: translateY(-1px);
             will-change: transform, width, opacity, left, top;
@@ -69,15 +69,13 @@
 
         .event-text {
             color: #B5C4D8; font-size: 10px; font-weight: 300; padding: 2px 4px; cursor: pointer;
-            transition: color 0.4s ease, background-color 0.4s ease, border-radius 0.4s ease, transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+            transition: color 0.4s ease, background-color 0.4s ease, border-radius 0.4s ease; 
             white-space: nowrap; display: inline-block; margin: 0; letter-spacing: 0.01em; pointer-events: auto; position: relative;
-            z-index: 10; filter: blur(0.3px); line-height: 1.0; box-sizing: border-box;
+            z-index: 10; line-height: 1.0; box-sizing: border-box;
         }
-        .event-text:hover { color: #D4E2F2; transform: scale(1.05); }
+        .event-text:hover { color: #D4E2F2; }
         .event-text.has-tag { 
             color: black; background: #B5C4D8; border-radius: 12px; 
-            transform: scale(1.1); 
-            animation: tagPulse 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .add-event-button {
@@ -303,11 +301,6 @@
         }
 
         @keyframes scroll-left { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
-        @keyframes tagPulse { 
-            0% { transform: scale(1); } 
-            50% { transform: scale(1.15); } 
-            100% { transform: scale(1.1); } 
-        }
     </style>
 </head>
 <body>
