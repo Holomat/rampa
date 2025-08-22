@@ -61,7 +61,7 @@
         .sliding-tag {
             position: absolute; background: #B5C4D8; border: none; border-radius: 12px; padding: 2px 4px; font-size: 10px;
             font-weight: 300; color: black; white-space: nowrap; pointer-events: none; z-index: 5; filter: blur(0.3px);
-            transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1); opacity: 1; min-width: 20px; box-sizing: border-box;
+            transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1); opacity: 0; min-width: 20px; box-sizing: border-box;
             display: flex; align-items: center; justify-content: center; height: 14px; transform: translateY(-1px);
             will-change: transform, width, opacity, left, top;
         }
@@ -74,7 +74,7 @@
             z-index: 10; filter: blur(0.3px); line-height: 1.0; box-sizing: border-box;
         }
         .event-text:hover { color: #D4E2F2; }
-        .event-text.has-tag { color: black; }
+        .event-text.has-tag { color: black; background: #B5C4D8; border-radius: 12px; }
 
         .add-event-button {
             position: fixed; right: 20px; top: 20px; width: 50px; height: 50px; cursor: pointer;
@@ -321,11 +321,8 @@
             const overlayRef = useRef(null);
             const [carouselOffset, setCarouselOffset] = useState(0);
             const [isDraggingCarousel, setIsDraggingCarousel] = useState(false);
-            const [tagPosition, setTagPosition] = useState({ x: 0, y: 0 });
-            const [tagWidth, setTagWidth] = useState(60);
             const [isDraggingTag, setIsDraggingTag] = useState(false);
             const [eventPositions, setEventPositions] = useState([]);
-            const [isTagVisible, setIsTagVisible] = useState(true);
             const tagsContainerRef = useRef(null);
 
             // 🔥 CONFIGURACIÓN FINAL - CORS SOLUCIONADO CON GET
@@ -390,10 +387,11 @@
                     return { success: false, error: error.message };
                 }
             };
-            // 🔥 FUNCIÓN CORREGIDA: Con proxy CORS para GitHub Pages
+            // 🔥 FUNCIÓN NUEVA: Enviar usando GET (sin CORS)
             const submitToGoogleSheets = async (eventData) => {
                 try {
-                    console.log('📊 === ENVIANDO VIA PROXY CORS ===');
+                    console.log('📊 === ENVIANDO VIA GET (SIN CORS) ===');
+                    console.log('📊 URL del Apps Script:', CONFIG.GOOGLE_SCRIPT_URL);
                     console.log('📊 Datos del evento:', eventData);
                     
                     // Construir URL con parámetros GET
@@ -407,60 +405,68 @@
                         dia: eventData.dia
                     });
                     
-                    const appsScriptUrl = `${CONFIG.GOOGLE_SCRIPT_URL}?${params.toString()}`;
+                    const fullUrl = `${CONFIG.GOOGLE_SCRIPT_URL}?${params.toString()}`;
+                    console.log('📤 URL completa:', fullUrl);
                     
-                    // 🔥 USAR PROXY CORS para GitHub Pages
-                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(appsScriptUrl)}`;
+                    console.log('📡 Iniciando fetch GET...');
                     
-                    console.log('📤 URL original:', appsScriptUrl);
-                    console.log('📤 URL con proxy:', proxyUrl);
-                    
-                    console.log('📡 Iniciando fetch con proxy...');
-                    
-                    const response = await fetch(proxyUrl, {
+                    const response = await fetch(fullUrl, {
                         method: 'GET',
                         headers: {
                             'Accept': 'application/json',
                         }
                     });
 
-                    console.log('📨 Respuesta del proxy:');
+                    console.log('📨 Respuesta recibida:');
                     console.log('  - Status:', response.status);
+                    console.log('  - StatusText:', response.statusText);
                     console.log('  - OK:', response.ok);
                     
                     if (response.ok) {
-                        const proxyResult = await response.json();
-                        console.log('📦 Respuesta del proxy:', proxyResult);
+                        console.log('✅ Response OK, leyendo texto...');
+                        const responseText = await response.text();
+                        console.log('📄 Texto completo de respuesta:', responseText);
                         
-                        if (proxyResult.contents) {
-                            try {
-                                const actualResult = JSON.parse(proxyResult.contents);
-                                console.log('📊 Resultado real parseado:', actualResult);
-                                
-                                if (actualResult.success) {
-                                    console.log('✅ SUCCESS: Evento guardado en Google Sheets via proxy');
-                                    return { success: true, data: actualResult };
-                                } else {
-                                    console.log('❌ Apps Script reportó error:', actualResult.error);
-                                    return { success: false, error: actualResult.error || 'Error del servidor' };
-                                }
-                            } catch (parseError) {
-                                console.log('⚠️ Error parseando contenido del proxy:', parseError);
-                                console.log('⚠️ Contenido:', proxyResult.contents);
-                                return { success: false, error: 'Respuesta inválida del servidor' };
+                        if (responseText.trim() === '') {
+                            console.log('⚠️ Respuesta vacía');
+                            return { success: false, error: 'Respuesta vacía del servidor' };
+                        }
+                        
+                        try {
+                            const result = JSON.parse(responseText);
+                            console.log('📊 JSON parseado exitosamente:', result);
+                            
+                            if (result.success) {
+                                console.log('✅ SUCCESS: Evento guardado en Google Sheets');
+                                return { success: true, data: result };
+                            } else {
+                                console.log('❌ Apps Script reportó error:', result.error);
+                                return { success: false, error: result.error || 'Error del servidor' };
                             }
-                        } else {
-                            console.log('❌ Proxy no devolvió contenido');
-                            return { success: false, error: 'Sin respuesta del servidor' };
+                        } catch (parseError) {
+                            console.log('⚠️ Error parseando JSON:', parseError);
+                            console.log('⚠️ Respuesta que no se pudo parsear:', responseText);
+                            return { success: false, error: 'Respuesta inválida del servidor' };
                         }
                     } else {
-                        console.log('❌ Proxy Error:', response.status, response.statusText);
-                        return { success: false, error: `Proxy error: ${response.status}` };
+                        console.log('❌ HTTP Error:', response.status, response.statusText);
+                        try {
+                            const errorText = await response.text();
+                            console.log('❌ Texto de error:', errorText);
+                            return { success: false, error: `HTTP ${response.status}: ${errorText}` };
+                        } catch (e) {
+                            return { success: false, error: `HTTP ${response.status}: ${response.statusText}` };
+                        }
                     }
                 } catch (error) {
-                    console.log('💥 === ERROR CON PROXY ===');
+                    console.log('💥 === ERROR CRÍTICO ===');
                     console.error('❌ Error completo:', error);
-                    return { success: false, error: `Error de conexión: ${error.message}` };
+                    
+                    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                        return { success: false, error: 'Error de conexión - verifica la URL del Apps Script' };
+                    } else {
+                        return { success: false, error: `Error de red: ${error.message}` };
+                    }
                 }
             };
 
@@ -518,15 +524,22 @@
                             if (data.success && data.events && data.events.length > 0) {
                                 console.log(`✅ Cargados ${data.events.length} eventos desde Google Sheets`);
                                 
-                                const formattedEvents = data.events.map((event, index) => ({
-                                    id: index + 1,
-                                    name: event.Nombre || 'Sin título',
-                                    date: formatDate(event.Fecha),
-                                    time: (event.Hora || '00:00').toString().substring(0, 5),
-                                    venue: event.Lugar || '',
-                                    category: event.Categoría || 'EVENTO',
-                                    day: event.Día || getDayOfWeek(event.Fecha)
-                                }));
+                                const formattedEvents = data.events.map((event, index) => {
+                                    console.log('📊 Evento crudo desde Google Sheets:', event);
+                                    
+                                    const formattedEvent = {
+                                        id: index + 1,
+                                        name: event.Nombre || 'Sin título',
+                                        date: formatDate(event.Fecha),
+                                        time: formatTime(event.Hora),
+                                        venue: event.Lugar || '',
+                                        category: event.Categoría || 'EVENTO',
+                                        day: event.Día || getDayOfWeek(event.Fecha)
+                                    };
+                                    
+                                    console.log('✅ Evento formateado:', formattedEvent);
+                                    return formattedEvent;
+                                });
 
                                 console.log('✅ Eventos formateados:', formattedEvents);
                                 return formattedEvents;
@@ -585,6 +598,11 @@
                     if (sheetsResult.success) {
                         console.log('✅ Éxito: Evento guardado en "Eventos pendientes"');
                         
+                        // Resetear formulario y cerrar INMEDIATAMENTE
+                        setFormData({ nombre: '', fecha: '', hora: '', lugar: '', categoria: 'RAVE' });
+                        setShowForm(false);
+                        
+                        // Mostrar mensaje de éxito
                         const message = document.createElement('div');
                         message.className = 'success-message visible';
                         message.textContent = '¡Evento enviado a "Eventos pendientes" para aprobación!';
@@ -595,13 +613,42 @@
                             console.log('📊 Datos guardados:', sheetsResult.data);
                         }
                         
+                        // Ocultar mensaje después de 2 segundos
+                        setTimeout(() => {
+                            if (message && message.parentNode) {
+                                message.classList.remove('visible');
+                                setTimeout(() => {
+                                    if (message && message.parentNode) {
+                                        message.parentNode.removeChild(message);
+                                    }
+                                }, 300);
+                            }
+                        }, 2000);
+                        
                     } else if (emailResult) {
                         console.log('⚠️ Google Sheets falló, pero email enviado');
                         
+                        // Resetear formulario y cerrar INMEDIATAMENTE
+                        setFormData({ nombre: '', fecha: '', hora: '', lugar: '', categoria: 'RAVE' });
+                        setShowForm(false);
+                        
+                        // Mostrar mensaje alternativo
                         const message = document.createElement('div');
                         message.className = 'success-message visible';
                         message.textContent = '¡Evento enviado por email! (Google Sheets no disponible)';
                         document.body.appendChild(message);
+                        
+                        // Ocultar mensaje después de 2 segundos
+                        setTimeout(() => {
+                            if (message && message.parentNode) {
+                                message.classList.remove('visible');
+                                setTimeout(() => {
+                                    if (message && message.parentNode) {
+                                        message.parentNode.removeChild(message);
+                                    }
+                                }, 300);
+                            }
+                        }, 2000);
                         
                     } else {
                         throw new Error('Tanto Google Sheets como email fallaron');
@@ -609,7 +656,29 @@
                     
                 } catch (error) {
                     console.error('❌ Error completo:', error);
-                    alert('Error enviando el evento. Intenta nuevamente.');
+                    
+                    // En caso de error, también cerrar el formulario
+                    setShowForm(false);
+                    setFormData({ nombre: '', fecha: '', hora: '', lugar: '', categoria: 'RAVE' });
+                    
+                    // Mostrar error con timeout
+                    const errorMessage = document.createElement('div');
+                    errorMessage.className = 'success-message visible';
+                    errorMessage.style.background = 'rgba(255, 100, 100, 0.95)';
+                    errorMessage.textContent = 'Error enviando el evento. Intenta nuevamente.';
+                    document.body.appendChild(errorMessage);
+                    
+                    setTimeout(() => {
+                        if (errorMessage && errorMessage.parentNode) {
+                            errorMessage.classList.remove('visible');
+                            setTimeout(() => {
+                                if (errorMessage && errorMessage.parentNode) {
+                                    errorMessage.parentNode.removeChild(errorMessage);
+                                }
+                            }, 300);
+                        }
+                    }, 2000);
+                    
                 } finally {
                     setIsSubmitting(false);
                 }
@@ -624,26 +693,120 @@
             const toggleForm = () => {
                 setShowForm(!showForm);
                 if (!showForm) {
-                    setFormData({ nombre: '', fecha: '', hora: '', lugar: '', categoria: '' });
+                    setFormData({ nombre: '', fecha: '', hora: '', lugar: '', categoria: 'RAVE' });
                 }
             };
 
-            // Función para formatear fecha
+            // 🔥 FUNCIÓN MEJORADA: Formatear fecha correctamente
             const formatDate = (dateStr) => {
                 if (!dateStr) return '';
-                if (dateStr.includes('.')) return dateStr; // Ya está en formato DD.MM.AA
                 
-                try {
-                    const date = new Date(dateStr);
-                    if (isNaN(date.getTime())) return dateStr;
-                    
-                    const day = String(date.getDate()).padStart(2, '0');
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const year = String(date.getFullYear()).slice(-2);
-                    return `${day}.${month}.${year}`;
-                } catch (e) {
+                console.log('🔍 Formateando fecha:', dateStr, typeof dateStr);
+                
+                // Si ya está en formato DD.MM.AA correcto, devolverlo
+                if (typeof dateStr === 'string' && /^\d{2}\.\d{2}\.\d{2}$/.test(dateStr)) {
+                    console.log('✅ Fecha ya en formato DD.MM.AA:', dateStr);
                     return dateStr;
                 }
+                
+                // Si viene como timestamp extraño o string raro, limpiar
+                if (typeof dateStr === 'string' && dateStr.includes('Z')) {
+                    console.log('⚠️ Fecha con timestamp extraño:', dateStr);
+                    // Extraer solo la parte de fecha inicial si es posible
+                    const match = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
+                    if (match) {
+                        const [_, year, month, day] = match;
+                        const shortYear = year.slice(-2);
+                        console.log('🔧 Fecha extraída:', `${day}.${month}.${shortYear}`);
+                        return `${day}.${month}.${shortYear}`;
+                    }
+                }
+                
+                // Si ya está en formato DD.MM.AA pero mal formateado, arreglar padding
+                if (typeof dateStr === 'string' && dateStr.includes('.')) {
+                    const parts = dateStr.split('.');
+                    if (parts.length === 3) {
+                        const day = String(parts[0]).padStart(2, '0');
+                        const month = String(parts[1]).padStart(2, '0');
+                        const year = parts[2].length === 2 ? parts[2] : String(parts[2]).slice(-2);
+                        const formatted = `${day}.${month}.${year}`;
+                        console.log('🔧 Fecha reformateada:', formatted);
+                        return formatted;
+                    }
+                }
+                
+                try {
+                    // Intentar parsear como fecha normal
+                    let date;
+                    if (typeof dateStr === 'string' && dateStr.includes('-')) {
+                        // Formato YYYY-MM-DD
+                        date = new Date(dateStr.split('T')[0] + 'T00:00:00');
+                    } else {
+                        date = new Date(dateStr);
+                    }
+                    
+                    if (!isNaN(date.getTime())) {
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const year = String(date.getFullYear()).slice(-2);
+                        const formatted = `${day}.${month}.${year}`;
+                        console.log('🔧 Fecha parseada:', formatted);
+                        return formatted;
+                    }
+                } catch (e) {
+                    console.warn('❌ Error parseando fecha:', dateStr, e);
+                }
+                
+                console.warn('⚠️ No se pudo formatear fecha, devolviendo original:', dateStr);
+                return String(dateStr);
+            };
+
+            // 🔥 FUNCIÓN MEJORADA: Formatear hora correctamente y forzar :00 o :30
+            const formatTime = (timeStr) => {
+                if (!timeStr) return '00:00';
+                
+                let hours = 0;
+                let minutes = 0;
+                
+                // Si ya está en formato HH:MM, extraer horas y minutos
+                if (typeof timeStr === 'string' && timeStr.includes(':')) {
+                    const [h, m] = timeStr.split(':');
+                    hours = parseInt(h) || 0;
+                    minutes = parseInt(m) || 0;
+                } 
+                // Si es un número (como 23.5 para 23:30)
+                else if (typeof timeStr === 'number') {
+                    hours = Math.floor(timeStr);
+                    minutes = Math.round((timeStr - hours) * 60);
+                }
+                // Si es string sin :, asumir formato HHMM
+                else if (typeof timeStr === 'string') {
+                    const cleanTime = timeStr.replace(/[^\d:]/g, '');
+                    
+                    if (cleanTime.includes(':')) {
+                        const [h, m] = cleanTime.split(':');
+                        hours = parseInt(h) || 0;
+                        minutes = parseInt(m) || 0;
+                    } else if (cleanTime.length >= 3) {
+                        hours = parseInt(cleanTime.substring(0, cleanTime.length - 2)) || 0;
+                        minutes = parseInt(cleanTime.substring(cleanTime.length - 2)) || 0;
+                    }
+                }
+                
+                // 🔥 FORZAR MINUTOS A :00 O :30 SOLAMENTE
+                if (minutes < 15) {
+                    minutes = 0;  // 0-14 → :00
+                } else if (minutes < 45) {
+                    minutes = 30; // 15-44 → :30
+                } else {
+                    minutes = 0;  // 45-59 → :00 (próxima hora)
+                    hours += 1;
+                }
+                
+                // Asegurar que las horas estén en rango 0-23
+                hours = hours % 24;
+                
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
             };
 
             // Función para obtener día de la semana
@@ -758,19 +921,8 @@
                     setBrutalistEventData(firstEvent);
                     setCurrentEventIndex(0);
                     setCarouselOffset(0);
-                    
-                    setTimeout(() => {
-                        if (eventPositions.length > 0) {
-                            const firstPosition = eventPositions[0];
-                            if (firstPosition) {
-                                setTagPosition({ x: firstPosition.x, y: firstPosition.y });
-                                setTagWidth(firstPosition.width);
-                                setIsTagVisible(true);
-                            }
-                        }
-                    }, 100);
                 }
-            }, [events, eventPositions]);
+            }, [events]);
 
             // Funciones para navegación
             const carouselWidth = events.length * 100;
@@ -781,18 +933,8 @@
                 setCarouselOffset(offset);
             };
 
-            const moveTagToEvent = (eventIndex) => {
-                if (eventPositions[eventIndex]) {
-                    const position = eventPositions[eventIndex];
-                    setTagPosition({ x: position.x, y: position.y });
-                    setTagWidth(position.width);
-                    setIsTagVisible(true);
-                }
-            };
-
             const animateEventTransition = (newEvent, newIndex) => {
                 moveCarousel(newIndex);
-                moveTagToEvent(newIndex);
                 setSelectedEvent(newEvent.id);
                 setBrutalistEventData(newEvent);
                 setCurrentEventIndex(newIndex);
@@ -871,23 +1013,9 @@
                         </svg>
                     </div>
 
-                    {/* Lista de eventos con etiqueta deslizante */}
+                    {/* Lista de eventos */}
                     <div className="contributors-section">
                         <div className="contributors-tags" ref={tagsContainerRef}>
-                            {/* Etiqueta deslizante - SIN mostrar categoría */}
-                            {selectedEvent && eventPositions.length > 0 && isTagVisible && (
-                                <div 
-                                    className={`sliding-tag ${isDraggingTag ? 'dragging' : ''}`}
-                                    style={{
-                                        left: `${tagPosition.x}px`,
-                                        top: `${tagPosition.y}px`,
-                                        width: `${tagWidth}px`
-                                    }}
-                                >
-                                    ●
-                                </div>
-                            )}
-
                             {events.map((event, index) => (
                                 <div key={event.id} className="event-wrapper">
                                     <span 
@@ -925,7 +1053,7 @@
                                                 <div className="day-circle">
                                                     <div className="brutalist-text day day-text">{event.day}</div>
                                                 </div>
-                                                <div className="brutalist-text date">{event.date.replace(/[:]/g, '.')}</div>
+                                                <div className="brutalist-text date">{event.date}</div>
                                                 <div className="day-circle">
                                                     <div className="brutalist-text day day-text">{event.day}</div>
                                                 </div>
@@ -996,6 +1124,7 @@
                                     value={formData.hora}
                                     onChange={(e) => handleFormChange('hora', e.target.value)}
                                     placeholder="Hora *"
+                                    step="1800"
                                     required
                                 />
                             </div>
