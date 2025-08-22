@@ -390,11 +390,10 @@
                     return { success: false, error: error.message };
                 }
             };
-            // 🔥 FUNCIÓN NUEVA: Enviar usando GET (sin CORS)
+            // 🔥 FUNCIÓN CORREGIDA: Con proxy CORS para GitHub Pages
             const submitToGoogleSheets = async (eventData) => {
                 try {
-                    console.log('📊 === ENVIANDO VIA GET (SIN CORS) ===');
-                    console.log('📊 URL del Apps Script:', CONFIG.GOOGLE_SCRIPT_URL);
+                    console.log('📊 === ENVIANDO VIA PROXY CORS ===');
                     console.log('📊 Datos del evento:', eventData);
                     
                     // Construir URL con parámetros GET
@@ -408,68 +407,60 @@
                         dia: eventData.dia
                     });
                     
-                    const fullUrl = `${CONFIG.GOOGLE_SCRIPT_URL}?${params.toString()}`;
-                    console.log('📤 URL completa:', fullUrl);
+                    const appsScriptUrl = `${CONFIG.GOOGLE_SCRIPT_URL}?${params.toString()}`;
                     
-                    console.log('📡 Iniciando fetch GET...');
+                    // 🔥 USAR PROXY CORS para GitHub Pages
+                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(appsScriptUrl)}`;
                     
-                    const response = await fetch(fullUrl, {
+                    console.log('📤 URL original:', appsScriptUrl);
+                    console.log('📤 URL con proxy:', proxyUrl);
+                    
+                    console.log('📡 Iniciando fetch con proxy...');
+                    
+                    const response = await fetch(proxyUrl, {
                         method: 'GET',
                         headers: {
                             'Accept': 'application/json',
                         }
                     });
 
-                    console.log('📨 Respuesta recibida:');
+                    console.log('📨 Respuesta del proxy:');
                     console.log('  - Status:', response.status);
-                    console.log('  - StatusText:', response.statusText);
                     console.log('  - OK:', response.ok);
                     
                     if (response.ok) {
-                        console.log('✅ Response OK, leyendo texto...');
-                        const responseText = await response.text();
-                        console.log('📄 Texto completo de respuesta:', responseText);
+                        const proxyResult = await response.json();
+                        console.log('📦 Respuesta del proxy:', proxyResult);
                         
-                        if (responseText.trim() === '') {
-                            console.log('⚠️ Respuesta vacía');
-                            return { success: false, error: 'Respuesta vacía del servidor' };
-                        }
-                        
-                        try {
-                            const result = JSON.parse(responseText);
-                            console.log('📊 JSON parseado exitosamente:', result);
-                            
-                            if (result.success) {
-                                console.log('✅ SUCCESS: Evento guardado en Google Sheets');
-                                return { success: true, data: result };
-                            } else {
-                                console.log('❌ Apps Script reportó error:', result.error);
-                                return { success: false, error: result.error || 'Error del servidor' };
+                        if (proxyResult.contents) {
+                            try {
+                                const actualResult = JSON.parse(proxyResult.contents);
+                                console.log('📊 Resultado real parseado:', actualResult);
+                                
+                                if (actualResult.success) {
+                                    console.log('✅ SUCCESS: Evento guardado en Google Sheets via proxy');
+                                    return { success: true, data: actualResult };
+                                } else {
+                                    console.log('❌ Apps Script reportó error:', actualResult.error);
+                                    return { success: false, error: actualResult.error || 'Error del servidor' };
+                                }
+                            } catch (parseError) {
+                                console.log('⚠️ Error parseando contenido del proxy:', parseError);
+                                console.log('⚠️ Contenido:', proxyResult.contents);
+                                return { success: false, error: 'Respuesta inválida del servidor' };
                             }
-                        } catch (parseError) {
-                            console.log('⚠️ Error parseando JSON:', parseError);
-                            console.log('⚠️ Respuesta que no se pudo parsear:', responseText);
-                            return { success: false, error: 'Respuesta inválida del servidor' };
+                        } else {
+                            console.log('❌ Proxy no devolvió contenido');
+                            return { success: false, error: 'Sin respuesta del servidor' };
                         }
                     } else {
-                        console.log('❌ HTTP Error:', response.status, response.statusText);
-                        try {
-                            const errorText = await response.text();
-                            console.log('❌ Texto de error:', errorText);
-                            return { success: false, error: `HTTP ${response.status}: ${errorText}` };
-                        } catch (e) {
-                            return { success: false, error: `HTTP ${response.status}: ${response.statusText}` };
-                        }
+                        console.log('❌ Proxy Error:', response.status, response.statusText);
+                        return { success: false, error: `Proxy error: ${response.status}` };
                     }
                 } catch (error) {
-                    console.log('💥 === ERROR CRÍTICO ===');
+                    console.log('💥 === ERROR CON PROXY ===');
                     console.error('❌ Error completo:', error);
-                    
-                    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                        return { success: false, error: 'Error de conexión - verifica la URL del Apps Script' };
-                    } else {
-                        return { success: false, error: `Error de red: ${error.message}` };
-                    }
+                    return { success: false, error: `Error de conexión: ${error.message}` };
                 }
             };
 
