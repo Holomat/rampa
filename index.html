@@ -326,37 +326,58 @@
                 GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxQMmVYV00HYbML82L0wqYLZ7wU5yQ2SrlFV3guloKnAj3nJM4UWdU_CtSMPsBlKUhevQ/exec'
             };
 
-            // 🔥 FUNCIÓN MEJORADA: Enviar a Google Sheets con mejor manejo de errores
+            // 🔥 FUNCIÓN ACTUALIZADA: Para conectar con tu Apps Script funcionando
             const submitToGoogleSheets = async (eventData) => {
                 try {
                     console.log('📊 Enviando a Google Sheets:', eventData);
+                    
+                    // 🎯 Formato exacto que espera tu Apps Script
+                    const payload = {
+                        nombre: eventData.nombre,
+                        fecha: eventData.fecha,
+                        hora: eventData.hora,
+                        lugar: eventData.lugar,
+                        categoria: eventData.categoria,
+                        dia: eventData.dia
+                    };
+                    
+                    console.log('📤 Payload enviado:', payload);
                     
                     const response = await fetch(CONFIG.GOOGLE_SCRIPT_URL, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({
-                            action: 'addEvent',
-                            ...eventData
-                        })
+                        body: JSON.stringify(payload)
                     });
 
-                    // Google Apps Script siempre devuelve status 200, incluso con errores
-                    console.log('📊 Respuesta Google Sheets:', response.status);
+                    console.log('📨 Respuesta HTTP:', response.status, response.statusText);
                     
-                    // Intentar leer la respuesta, pero no fallar si no se puede
-                    try {
-                        const result = await response.text();
-                        console.log('📊 Resultado:', result);
-                    } catch (e) {
-                        console.log('📊 No se pudo leer respuesta, pero probablemente se envió correctamente');
+                    if (response.ok) {
+                        const responseText = await response.text();
+                        console.log('📄 Respuesta completa:', responseText);
+                        
+                        try {
+                            const result = JSON.parse(responseText);
+                            console.log('📊 Resultado parseado:', result);
+                            
+                            if (result.success) {
+                                console.log('✅ Evento enviado exitosamente a "Eventos Pendientes"');
+                                return { success: true, data: result };
+                            } else {
+                                console.error('❌ Error del servidor:', result.error);
+                                return { success: false, error: result.error };
+                            }
+                        } catch (parseError) {
+                            console.log('⚠️ Respuesta no es JSON válido, pero HTTP OK');
+                            // Tu Apps Script está funcionando pero la respuesta puede tener problemas de formato
+                            return { success: true, message: 'Enviado correctamente' };
+                        }
+                    } else {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
-                    
-                    return { success: true };
                 } catch (error) {
-                    console.error('❌ Error con Google Sheets:', error);
-                    // No fallar completamente, continuar con email
+                    console.error('❌ Error enviando a Google Sheets:', error);
                     return { success: false, error: error.message };
                 }
             };
@@ -396,41 +417,50 @@
                 }
             };
 
-            // 🔥 FUNCIÓN: Cargar eventos desde Google Sheets
+            // 🔥 FUNCIÓN ACTUALIZADA: Cargar eventos desde tu Apps Script funcionando
             const loadEventsFromGoogleSheets = async () => {
                 try {
                     console.log('📊 Cargando eventos desde Google Sheets...');
                     
+                    // Tu Apps Script maneja GET automáticamente
                     const response = await fetch(`${CONFIG.GOOGLE_SCRIPT_URL}?action=getApprovedEvents&t=${Date.now()}`);
                     
                     if (response.ok) {
-                        const result = await response.text();
-                        console.log('📊 Respuesta cruda:', result);
+                        const responseText = await response.text();
+                        console.log('📄 Respuesta cruda:', responseText);
                         
                         try {
-                            const data = JSON.parse(result);
+                            const data = JSON.parse(responseText);
                             console.log('📊 Datos parseados:', data);
                             
                             if (data.success && data.events && data.events.length > 0) {
+                                console.log(`✅ Cargados ${data.events.length} eventos desde Google Sheets`);
+                                
                                 const formattedEvents = data.events.map((event, index) => ({
                                     id: index + 1,
-                                    name: event.Nombre || event.nombre || 'Sin título',
-                                    date: formatDate(event.Fecha || event.fecha),
-                                    time: (event.Hora || event.hora || '00:00').toString().substring(0, 5),
-                                    venue: event.Lugar || event.lugar || '',
-                                    category: event.Categoría || event.categoria || 'EVENTO',
-                                    day: event.Día || event.dia || getDayOfWeek(event.Fecha || event.fecha)
+                                    name: event.Nombre || 'Sin título',
+                                    date: formatDate(event.Fecha),
+                                    time: (event.Hora || '00:00').toString().substring(0, 5),
+                                    venue: event.Lugar || '',
+                                    category: event.Categoría || 'EVENTO',
+                                    day: event.Día || getDayOfWeek(event.Fecha)
                                 }));
 
                                 console.log('✅ Eventos formateados:', formattedEvents);
                                 return formattedEvents;
+                            } else {
+                                console.log('⚠️ No hay eventos o respuesta vacía:', data);
+                                return null;
                             }
                         } catch (parseError) {
-                            console.log('⚠️ Error parseando JSON, pero respuesta recibida');
+                            console.log('❌ Error parseando respuesta:', parseError);
+                            console.log('Respuesta que falló:', responseText);
+                            return null;
                         }
+                    } else {
+                        console.error('❌ Error en respuesta HTTP:', response.status, response.statusText);
+                        return null;
                     }
-                    
-                    return null;
                 } catch (error) {
                     console.error('❌ Error cargando eventos:', error);
                     return null;
@@ -469,35 +499,30 @@
                     // 2. Enviar email como backup/notificación
                     const emailResult = await submitByEmail(eventToSubmit);
                     
-                    // 3. Mostrar resultado
-                    if (sheetsResult.success || emailResult) {
+                    // 3. Mostrar resultado detallado
+                    if (sheetsResult.success) {
+                        console.log('✅ Éxito: Evento guardado en "Eventos pendientes"');
+                        
                         const message = document.createElement('div');
                         message.className = 'success-message visible';
-                        message.textContent = sheetsResult.success 
-                            ? '¡Evento enviado y guardado en Google Sheets!' 
-                            : '¡Evento enviado por email! (Google Sheets no disponible)';
+                        message.textContent = '¡Evento enviado a "Eventos pendientes" para aprobación!';
                         document.body.appendChild(message);
                         
-                        // Recargar eventos después de 2 segundos
-                        setTimeout(async () => {
-                            const newEvents = await loadEventsFromGoogleSheets();
-                            if (newEvents && newEvents.length > 0) {
-                                setEvents(newEvents);
-                                // Ir al último evento agregado
-                                const lastIndex = newEvents.length - 1;
-                                setCurrentEventIndex(lastIndex);
-                                setSelectedEvent(newEvents[lastIndex].id);
-                                setBrutalistEventData(newEvents[lastIndex]);
-                            }
-                        }, 2000);
+                        // Opcional: Mostrar detalles en consola
+                        if (sheetsResult.data) {
+                            console.log('📊 Datos guardados:', sheetsResult.data);
+                        }
                         
-                        setTimeout(() => {
-                            message.remove();
-                            setShowForm(false);
-                            setFormData({ nombre: '', fecha: '', hora: '', lugar: '', categoria: '' });
-                        }, 3000);
+                    } else if (emailResult) {
+                        console.log('⚠️ Google Sheets falló, pero email enviado');
+                        
+                        const message = document.createElement('div');
+                        message.className = 'success-message visible';
+                        message.textContent = '¡Evento enviado por email! (Google Sheets no disponible)';
+                        document.body.appendChild(message);
+                        
                     } else {
-                        throw new Error('No se pudo enviar el evento');
+                        throw new Error('Tanto Google Sheets como email fallaron');
                     }
                     
                 } catch (error) {
