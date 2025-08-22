@@ -328,13 +328,13 @@
             const [isTagVisible, setIsTagVisible] = useState(true);
             const tagsContainerRef = useRef(null);
 
-            // 🔥 CONFIGURACIÓN ACTUALIZADA CON NUEVA URL
+            // 🔥 CONFIGURACIÓN FINAL - URL CON CORS SOLUCIONADO
             const CONFIG = {
                 // 📧 Tu email donde quieres recibir los eventos
                 EMAIL_DESTINO: 'milarepa775@gmail.com',
                 
-                // 📊 NUEVA URL del Apps Script (re-deployada sin CORS)
-                GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyfQ5rvJApUXE4BRNgSKD_lbsvQpfscjxnZ7QiZdtJgAbkDyXXhq-LkLaa6n0REuVG4oA/exec'
+                // 📊 URL FINAL del Apps Script (CON CORS HABILITADO)
+                GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx9wei94QEOsQAYIGTpLlQg0sLEnqgVY5yHNJgxrM-ZK1Ns_OquqYguKFMCU_9jVaB10A/exec'
             };
 
             // 🔥 FUNCIÓN DE TEST: Verificar conexión con Apps Script
