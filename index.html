@@ -328,21 +328,76 @@
             const [isTagVisible, setIsTagVisible] = useState(true);
             const tagsContainerRef = useRef(null);
 
-            // 🔥 CONFIGURACIÓN - CAMBIAR ESTOS VALORES
+            // 🔥 CONFIGURACIÓN ACTUALIZADA CON NUEVA URL
             const CONFIG = {
                 // 📧 Tu email donde quieres recibir los eventos
                 EMAIL_DESTINO: 'milarepa775@gmail.com',
                 
-                // 📊 URL de tu Google Apps Script (el que ya tienes)
-                GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxQMmVYV00HYbML82L0wqYLZ7wU5yQ2SrlFV3guloKnAj3nJM4UWdU_CtSMPsBlKUhevQ/exec'
+                // 📊 NUEVA URL del Apps Script (re-deployada sin CORS)
+                GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyfQ5rvJApUXE4BRNgSKD_lbsvQpfscjxnZ7QiZdtJgAbkDyXXhq-LkLaa6n0REuVG4oA/exec'
             };
 
-            // 🔥 FUNCIÓN ACTUALIZADA: Para conectar con tu Apps Script funcionando
+            // 🔥 FUNCIÓN DE TEST: Verificar conexión con Apps Script
+            const testGoogleSheetsConnection = async () => {
+                try {
+                    console.log('🧪 === TEST DE CONEXIÓN APPS SCRIPT ===');
+                    console.log('🔗 URL a probar:', CONFIG.GOOGLE_SCRIPT_URL);
+                    
+                    // Test GET primero
+                    console.log('📡 Probando GET...');
+                    const getResponse = await fetch(`${CONFIG.GOOGLE_SCRIPT_URL}?action=test&t=${Date.now()}`);
+                    console.log('📨 GET Response:', getResponse.status, getResponse.statusText);
+                    
+                    if (getResponse.ok) {
+                        const getText = await getResponse.text();
+                        console.log('✅ GET exitoso:', getText);
+                    } else {
+                        console.log('❌ GET falló:', getResponse.status);
+                    }
+                    
+                    // Test POST ahora
+                    console.log('📡 Probando POST...');
+                    const postPayload = {
+                        nombre: 'Test Conexión',
+                        fecha: '2025-08-22',
+                        hora: '15:30',
+                        lugar: 'Test Location',
+                        categoria: 'RAVE',
+                        dia: 'JUEVES'
+                    };
+                    
+                    const postResponse = await fetch(CONFIG.GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(postPayload)
+                    });
+                    
+                    console.log('📨 POST Response:', postResponse.status, postResponse.statusText);
+                    
+                    if (postResponse.ok) {
+                        const postText = await postResponse.text();
+                        console.log('✅ POST exitoso:', postText);
+                        return { success: true, message: 'Conexión funcionando' };
+                    } else {
+                        console.log('❌ POST falló:', postResponse.status);
+                        return { success: false, error: `POST falló: ${postResponse.status}` };
+                    }
+                    
+                } catch (error) {
+                    console.log('💥 Error de conexión:', error);
+                    return { success: false, error: error.message };
+                }
+            };
+            // 🔥 FUNCIÓN DE DEBUG: Enviar a Google Sheets con logging completo
             const submitToGoogleSheets = async (eventData) => {
                 try {
-                    console.log('📊 Enviando a Google Sheets:', eventData);
+                    console.log('🚀 === INICIO DEBUG GOOGLE SHEETS ===');
+                    console.log('📊 URL del Apps Script:', CONFIG.GOOGLE_SCRIPT_URL);
+                    console.log('📊 Datos del evento:', eventData);
                     
-                    // 🎯 Formato exacto que espera tu Apps Script
+                    // Preparar payload exactamente como espera tu Apps Script
                     const payload = {
                         nombre: eventData.nombre,
                         fecha: eventData.fecha,
@@ -352,7 +407,10 @@
                         dia: eventData.dia
                     };
                     
-                    console.log('📤 Payload enviado:', payload);
+                    console.log('📤 Payload final a enviar:', payload);
+                    console.log('📤 Payload como JSON:', JSON.stringify(payload));
+                    
+                    console.log('📡 Iniciando fetch...');
                     
                     const response = await fetch(CONFIG.GOOGLE_SCRIPT_URL, {
                         method: 'POST',
@@ -362,34 +420,72 @@
                         body: JSON.stringify(payload)
                     });
 
-                    console.log('📨 Respuesta HTTP:', response.status, response.statusText);
+                    console.log('📨 Respuesta recibida:');
+                    console.log('  - Status:', response.status);
+                    console.log('  - StatusText:', response.statusText);
+                    console.log('  - OK:', response.ok);
+                    console.log('  - Headers:', response.headers);
                     
                     if (response.ok) {
+                        console.log('✅ Response OK, leyendo texto...');
                         const responseText = await response.text();
-                        console.log('📄 Respuesta completa:', responseText);
+                        console.log('📄 Texto completo de respuesta:', responseText);
+                        console.log('📄 Longitud de respuesta:', responseText.length);
+                        
+                        if (responseText.trim() === '') {
+                            console.log('⚠️ Respuesta vacía pero HTTP OK');
+                            return { success: true, message: 'Enviado (respuesta vacía)' };
+                        }
                         
                         try {
                             const result = JSON.parse(responseText);
-                            console.log('📊 Resultado parseado:', result);
+                            console.log('📊 JSON parseado exitosamente:', result);
                             
                             if (result.success) {
-                                console.log('✅ Evento enviado exitosamente a "Eventos Pendientes"');
+                                console.log('✅ SUCCESS: Evento enviado correctamente');
                                 return { success: true, data: result };
                             } else {
-                                console.error('❌ Error del servidor:', result.error);
-                                return { success: false, error: result.error };
+                                console.log('❌ Apps Script reportó error:', result.error);
+                                return { success: false, error: result.error || 'Error del servidor' };
                             }
                         } catch (parseError) {
-                            console.log('⚠️ Respuesta no es JSON válido, pero HTTP OK');
-                            // Tu Apps Script está funcionando pero la respuesta puede tener problemas de formato
-                            return { success: true, message: 'Enviado correctamente' };
+                            console.log('⚠️ Error parseando JSON:', parseError);
+                            console.log('⚠️ Respuesta que no se pudo parsear:', responseText);
+                            
+                            // Si hay contenido pero no es JSON válido, asumir éxito
+                            if (responseText.includes('success') || responseText.length > 0) {
+                                return { success: true, message: 'Enviado (respuesta no-JSON)' };
+                            } else {
+                                return { success: false, error: 'Respuesta inválida del servidor' };
+                            }
                         }
                     } else {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        console.log('❌ HTTP Error:', response.status, response.statusText);
+                        
+                        // Intentar leer el error del servidor
+                        try {
+                            const errorText = await response.text();
+                            console.log('❌ Texto de error:', errorText);
+                            return { success: false, error: `HTTP ${response.status}: ${errorText}` };
+                        } catch (e) {
+                            return { success: false, error: `HTTP ${response.status}: ${response.statusText}` };
+                        }
                     }
                 } catch (error) {
-                    console.error('❌ Error enviando a Google Sheets:', error);
-                    return { success: false, error: error.message };
+                    console.log('💥 === ERROR CRÍTICO ===');
+                    console.error('❌ Error completo:', error);
+                    console.error('❌ Error name:', error.name);
+                    console.error('❌ Error message:', error.message);
+                    console.error('❌ Error stack:', error.stack);
+                    
+                    // Identificar tipo de error
+                    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                        return { success: false, error: 'Error de conexión - verifica la URL del Apps Script' };
+                    } else if (error.name === 'AbortError') {
+                        return { success: false, error: 'Timeout - el servidor tardó demasiado' };
+                    } else {
+                        return { success: false, error: `Error de red: ${error.message}` };
+                    }
                 }
             };
 
