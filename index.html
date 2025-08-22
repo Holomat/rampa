@@ -328,12 +328,12 @@
             const [isTagVisible, setIsTagVisible] = useState(true);
             const tagsContainerRef = useRef(null);
 
-            // 🔥 CONFIGURACIÓN FINAL - URL CORREGIDA SIN SETHEEADERS
+            // 🔥 CONFIGURACIÓN SIMPLIFICADA - Solo email por ahora
             const CONFIG = {
                 // 📧 Tu email donde quieres recibir los eventos
                 EMAIL_DESTINO: 'milarepa775@gmail.com',
                 
-                // 📊 URL FINAL del Apps Script (SIN setHeaders, compatible)
+                // 📊 Google Apps Script (para intentar, con fallback a email)
                 GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycby7qmobbt_qcVHyw67cxLb-D0YZKgQzVBVTcSmBRdxk2NbpaX6hnfJFU2Ycb6F0l3-ftA/exec'
             };
 
@@ -899,7 +899,7 @@
                     {/* Lista de eventos con etiqueta deslizante */}
                     <div className="contributors-section">
                         <div className="contributors-tags" ref={tagsContainerRef}>
-                            {/* Etiqueta deslizante */}
+                            {/* Etiqueta deslizante - SIN mostrar categoría */}
                             {selectedEvent && eventPositions.length > 0 && isTagVisible && (
                                 <div 
                                     className={`sliding-tag ${isDraggingTag ? 'dragging' : ''}`}
@@ -909,7 +909,7 @@
                                         width: `${tagWidth}px`
                                     }}
                                 >
-                                    {brutalistEventData?.category || 'EVENTO'}
+                                    ●
                                 </div>
                             )}
 
