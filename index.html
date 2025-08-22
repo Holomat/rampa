@@ -154,6 +154,17 @@
             box-sizing: border-box;
             transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             letter-spacing: -0.01em;
+            min-height: 52px; /* Altura mínima uniforme */
+            height: 52px; /* Altura fija para consistencia */
+            line-height: 1.2;
+        }
+        
+        /* Ajustes específicos para inputs de fecha y hora */
+        .form-input[type="date"], 
+        .form-input[type="time"] {
+            padding: 14px 18px; /* Padding ligeramente menor para compensar el contenido interno */
+            display: flex;
+            align-items: center;
         }
         
         .form-input::placeholder {
