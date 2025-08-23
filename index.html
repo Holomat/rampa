@@ -401,6 +401,14 @@
         }
         .success-message.visible { opacity: 1; visibility: visible; }
 
+        .loading-logo {
+            width: 900px !important;
+            height: auto !important;
+            max-width: 90vw;
+            display: block;
+            margin: 0 auto;
+        }
+
         .loading-message {
             color: #B5C4D8; font-family: 'Inter', sans-serif; font-size: 12px; text-align: center;
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000;
@@ -869,65 +877,103 @@
                 return String(dateStr);
             };
 
-            // 🔥 FUNCIÓN MEJORADA: Limpiar hora desde Google Sheets Y AGREGAR H
+            // 🔥 FUNCIÓN MEJORADA: Limpiar hora desde Google Sheets CON DEBUGGING COMPLETO
             const cleanTimeFromSheets = (timeStr) => {
-                console.log('🕐 Hora recibida desde Google Sheets:', timeStr, typeof timeStr);
+                console.log('🕐 === DEBUGGING HORA COMPLETO ===');
+                console.log('🕐 Valor recibido:', timeStr);
+                console.log('🕐 Tipo de dato:', typeof timeStr);
+                console.log('🕐 Es null/undefined?:', timeStr == null);
+                console.log('🕐 String representation:', String(timeStr));
                 
-                if (!timeStr) {
-                    console.log('⚠️ Hora vacía, devolviendo 00:00');
+                if (!timeStr && timeStr !== 0) {
+                    console.log('❌ Hora vacía/null, devolviendo 00:00');
                     return '00:00';
                 }
                 
                 let cleanedTime = '';
                 
-                // Si viene como timestamp de Google Sheets (1899-12-30T20:27:51.000Z)
-                if (typeof timeStr === 'string' && timeStr.includes('T') && timeStr.includes('Z')) {
+                // Caso 1: Timestamp completo de Google Sheets
+                if (typeof timeStr === 'string' && (timeStr.includes('T') || timeStr.includes('Z'))) {
+                    console.log('📅 CASO 1: Timestamp detectado');
                     try {
-                        console.log('📅 Procesando timestamp de Google Sheets:', timeStr);
-                        
-                        // Extraer solo la parte de tiempo después de T
-                        const timePart = timeStr.split('T')[1];
-                        if (timePart) {
-                            // Remover la Z y cualquier parte decimal
-                            const cleanTime = timePart.replace('Z', '').split('.')[0];
-                            const [hours, minutes, seconds] = cleanTime.split(':');
-                            
+                        let timePart = '';
+                        if (timeStr.includes('T')) {
+                            timePart = timeStr.split('T')[1];
+                        }
+                        if (timePart && timePart.includes('Z')) {
+                            timePart = timePart.replace('Z', '');
+                        }
+                        if (timePart && timePart.includes('.')) {
+                            timePart = timePart.split('.')[0];
+                        }
+                        if (timePart && timePart.includes(':')) {
+                            const [hours, minutes] = timePart.split(':');
                             cleanedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-                            console.log('✅ Hora extraída del timestamp:', cleanedTime);
+                            console.log('✅ CASO 1 exitoso:', cleanedTime);
                         }
                     } catch (e) {
-                        console.error('❌ Error parseando timestamp:', timeStr, e);
-                        cleanedTime = '00:00';
+                        console.error('❌ CASO 1 error:', e);
                     }
                 }
-                // Si ya está en formato HH:MM o H:MM
+                
+                // Caso 2: Formato HH:MM normal
                 else if (typeof timeStr === 'string' && timeStr.includes(':')) {
-                    const cleanStr = timeStr.trim();
-                    const [hours, minutes] = cleanStr.split(':');
-                    
-                    if (hours !== undefined && minutes !== undefined) {
+                    console.log('📅 CASO 2: Formato HH:MM detectado');
+                    const parts = timeStr.trim().split(':');
+                    if (parts.length >= 2) {
+                        const hours = parseInt(parts[0]) || 0;
+                        const minutes = parseInt(parts[1]) || 0;
                         cleanedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-                        console.log('✅ Hora ya en formato correcto:', cleanedTime);
-                    } else {
-                        cleanedTime = '00:00';
+                        console.log('✅ CASO 2 exitoso:', cleanedTime);
                     }
                 }
-                // Si es un número decimal (como 20.75 para 20:45)
+                
+                // Caso 3: Número decimal (ej: 23.5 = 23:30)
                 else if (typeof timeStr === 'number') {
+                    console.log('📅 CASO 3: Número detectado:', timeStr);
                     const hours = Math.floor(timeStr);
                     const minutes = Math.round((timeStr - hours) * 60);
                     cleanedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-                    console.log('✅ Hora convertida desde número:', cleanedTime);
+                    console.log('✅ CASO 3 exitoso:', cleanedTime);
                 }
-                else {
-                    console.warn('⚠️ Formato de hora no reconocido:', timeStr);
+                
+                // Caso 4: String que es en realidad un número
+                else if (typeof timeStr === 'string' && !isNaN(parseFloat(timeStr))) {
+                    console.log('📅 CASO 4: String numérico detectado');
+                    const numValue = parseFloat(timeStr);
+                    const hours = Math.floor(numValue);
+                    const minutes = Math.round((numValue - hours) * 60);
+                    cleanedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                    console.log('✅ CASO 4 exitoso:', cleanedTime);
+                }
+                
+                // Caso 5: Formato HHMM sin separador
+                else if (typeof timeStr === 'string' && /^\d{3,4}$/.test(timeStr.trim())) {
+                    console.log('📅 CASO 5: Formato HHMM detectado');
+                    const cleanStr = timeStr.trim();
+                    let hours, minutes;
+                    if (cleanStr.length === 3) {
+                        hours = parseInt(cleanStr.substring(0, 1));
+                        minutes = parseInt(cleanStr.substring(1, 3));
+                    } else {
+                        hours = parseInt(cleanStr.substring(0, 2));
+                        minutes = parseInt(cleanStr.substring(2, 4));
+                    }
+                    cleanedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                    console.log('✅ CASO 5 exitoso:', cleanedTime);
+                }
+                
+                // Si no se pudo procesar
+                if (!cleanedTime) {
+                    console.warn('⚠️ TODOS LOS CASOS FALLARON');
+                    console.warn('⚠️ Usando valor por defecto 00:00');
                     cleanedTime = '00:00';
                 }
                 
-                // 🔥 SIEMPRE AGREGAR LA H AL FINAL PARA CONSISTENCIA CON LA WEB
-                const finalTime = cleanedTime;
-                console.log('🎯 Hora final para mostrar en web:', finalTime);
-                return finalTime;
+                console.log('🎯 RESULTADO FINAL:', cleanedTime);
+                console.log('🕐 === FIN DEBUG HORA ===');
+                
+                return cleanedTime;
             };
             const formatTime = (timeStr) => {
                 if (!timeStr) return '00:00';
@@ -1143,7 +1189,7 @@
                     <div className="min-h-screen bg-black overflow-hidden flex flex-col items-center justify-center" style={{ fontFamily: 'Space Mono, monospace' }}>
                         {/* Logo RAMPA centrado - doble de grande */}
                         <div>
-                            <svg className="rampa-logo" width="720" height="auto" viewBox="0 0 452 154" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: '#B5C4D8' }}>
+                            <svg className="loading-logo" width="900" height="auto" viewBox="0 0 452 154" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: '#B5C4D8' }}>
                                 <path d="M67.495 54.9663C98.6065 38.1977 131.04 37.9868 139.937 54.4946C148.835 71.0025 130.827 97.9781 99.7157 114.747C68.6044 131.515 36.1708 131.726 27.2734 115.218C18.3763 98.7104 36.3839 71.7348 67.495 54.9663ZM126.693 61.1655C119.111 47.0971 93.2836 46.299 69.0077 59.3833C44.7322 72.4675 31.1999 94.479 38.7821 108.547C46.3648 122.616 72.1918 123.414 96.4677 110.33C120.743 97.2454 134.275 75.2339 126.693 61.1655Z" fill="currentColor"/>
                                 <path d="M394.951 114.713C373.073 137.843 345.914 145.245 334.29 131.244C322.666 117.243 330.979 87.1425 352.858 64.0122C374.736 40.882 401.895 33.4808 413.519 47.4813C425.143 61.4822 416.83 91.583 394.951 114.713ZM343.722 121.849C353.628 133.781 375.498 128.823 392.57 110.774C409.641 92.7261 415.45 68.4226 405.544 56.4907C395.637 44.5588 373.768 49.5167 356.696 67.565C339.624 85.6133 333.816 109.917 343.722 121.849Z" fill="currentColor"/>
                                 <path d="M94.6431 111.003H85.2631L88.4131 96.3027C88.5064 95.836 88.5531 95.4627 88.5531 95.1827C88.5531 94.3894 88.2964 93.7594 87.7831 93.2927C87.2698 92.7794 86.4764 92.5227 85.4031 92.5227H75.2531L71.3331 111.003H62.1631L72.5231 62.0027H89.7431C92.0298 62.0027 94.0364 62.3293 95.7631 62.9827C97.5364 63.5893 99.0064 64.4293 100.173 65.5027C101.386 66.5294 102.273 67.766 102.833 69.2127C103.44 70.6594 103.743 72.176 103.743 73.7627C103.743 77.1694 102.95 79.946 101.363 82.0927C99.8231 84.1927 97.4431 85.7794 94.2231 86.8527V88.1127C95.5764 88.2527 96.6031 88.7427 97.3031 89.5827C98.0498 90.376 98.4231 91.4027 98.4231 92.6627C98.4231 93.1294 98.3764 93.596 98.2831 94.0627L94.6431 111.003ZM77.1431 83.7027H85.5431C88.0164 83.7027 90.0464 83.0494 91.6331 81.7427C93.2198 80.436 94.0131 78.6627 94.0131 76.4227C94.0131 74.6494 93.5231 73.2727 92.5431 72.2927C91.6098 71.3127 90.1631 70.8227 88.2031 70.8227H79.8731L77.1431 83.7027Z" fill="currentColor"/>
