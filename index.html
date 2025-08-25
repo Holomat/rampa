@@ -49,7 +49,7 @@
         .event-slide .brutalist-text.venue-text { 
             font-size: 35px !important; 
             padding-top: 5px !important;
-            letter-spacing: 0.0em; /* 🔥 KERNING AJUSTADO A 0.0 */
+            letter-spacing: -0.06em; /* 🔥 MISMO KERNING QUE LA HORA */
             line-height: 0.95; /* 🔥 ALTURA DE LÍNEA AJUSTADA */
             max-width: 90%; /* 🔥 ANCHO MÁXIMO PARA CONTROLAR LÍNEAS */
             word-wrap: break-word; /* 🔥 PERMITE QUIEBRE DE PALABRAS */
@@ -152,10 +152,10 @@
         
         .form-input, .form-select {
             width: 100%; 
-            background: transparent;
+            background: rgba(181, 196, 216, 0.03); /* 🔥 BACKGROUND SUTIL PARA TODOS */
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
-            border: 1px solid transparent; 
+            border: none; /* 🔥 SIN BORDES */
             border-radius: 14px; 
             padding: 16px 18px 16px 48px;
             color: rgba(181, 196, 216, 0.9); 
@@ -180,50 +180,64 @@
             align-items: center;
             direction: ltr;
             text-align: left;
+            color: rgba(181, 196, 216, 0.9); /* 🔥 MISMO COLOR QUE EL RESTO */
+            background: rgba(181, 196, 216, 0.03); /* 🔥 MISMO BACKGROUND */
+            border: none; /* 🔥 SIN BORDES COMO EL RESTO */
+        }
+        
+        /* Cuando tienen valor, cambiar color a blanco */
+        .form-input[type="date"]:valid,
+        .form-input[type="time"]:valid {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+        
+        /* Estilos para placeholders de fecha y hora */
+        .form-input[type="date"]::-webkit-datetime-edit-text,
+        .form-input[type="date"]::-webkit-datetime-edit-month-field,
+        .form-input[type="date"]::-webkit-datetime-edit-day-field,
+        .form-input[type="date"]::-webkit-datetime-edit-year-field {
+            color: rgba(181, 196, 216, 0.6); /* 🔥 COLOR PLACEHOLDER */
+        }
+        
+        .form-input[type="time"]::-webkit-datetime-edit-text,
+        .form-input[type="time"]::-webkit-datetime-edit-hour-field,
+        .form-input[type="time"]::-webkit-datetime-edit-minute-field {
+            color: rgba(181, 196, 216, 0.6); /* 🔥 COLOR PLACEHOLDER */
+        }
+        
+        /* Cuando tienen focus o valor, usar color normal */
+        .form-input[type="date"]:focus::-webkit-datetime-edit-text,
+        .form-input[type="date"]:focus::-webkit-datetime-edit-month-field,
+        .form-input[type="date"]:focus::-webkit-datetime-edit-day-field,
+        .form-input[type="date"]:focus::-webkit-datetime-edit-year-field,
+        .form-input[type="date"]:valid::-webkit-datetime-edit-text,
+        .form-input[type="date"]:valid::-webkit-datetime-edit-month-field,
+        .form-input[type="date"]:valid::-webkit-datetime-edit-day-field,
+        .form-input[type="date"]:valid::-webkit-datetime-edit-year-field,
+        .form-input[type="time"]:focus::-webkit-datetime-edit-text,
+        .form-input[type="time"]:focus::-webkit-datetime-edit-hour-field,
+        .form-input[type="time"]:focus::-webkit-datetime-edit-minute-field,
+        .form-input[type="time"]:valid::-webkit-datetime-edit-text,
+        .form-input[type="time"]:valid::-webkit-datetime-edit-hour-field,
+        .form-input[type="time"]:valid::-webkit-datetime-edit-minute-field {
+            color: rgba(181, 196, 216, 0.9); /* 🔥 MISMO COLOR QUE EL RESTO */
         }
         
         .form-input[type="date"]::-webkit-calendar-picker-indicator,
         .form-input[type="time"]::-webkit-calendar-picker-indicator {
-            filter: invert(1) opacity(0.6);
+            filter: invert(1) opacity(0.3); /* 🔥 OPACIDAD MÁS BAJA PARA IGUALAR TONO */
             cursor: pointer;
             position: absolute;
             left: 18px;
             margin: 0;
+            width: 16px; /* 🔥 TAMAÑO CONSISTENTE */
+            height: 16px; /* 🔥 TAMAÑO CONSISTENTE */
         }
         
-        /* Iconos adicionales para campos de fecha y hora en la fila */
-        .form-row .form-input-half:first-child::before {
-            content: '';
-            position: absolute;
-            left: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 16px;
-            height: 16px;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(181,196,216,0.6)'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3e%3c/svg%3e");
-            background-size: 16px 16px;
-            background-repeat: no-repeat;
-            background-position: center;
-            opacity: 0.6;
-            z-index: 5;
-            pointer-events: none;
-        }
-        
+        /* 🔥 OCULTAR ICONOS SUPERPUESTOS - Solo mostrar el nativo */
+        .form-row .form-input-half:first-child::before,
         .form-row .form-input-half:last-child::before {
-            content: '';
-            position: absolute;
-            left: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 16px;
-            height: 16px;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(181,196,216,0.6)'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'/%3e%3c/svg%3e");
-            background-size: 16px 16px;
-            background-repeat: no-repeat;
-            background-position: center;
-            opacity: 0.6;
-            z-index: 5;
-            pointer-events: none;
+            display: none !important; /* 🔥 OCULTAR ICONOS DUPLICADOS */
         }
         
         .form-input::placeholder {
@@ -240,8 +254,7 @@
         
         .form-input:focus, .form-select:focus { 
             outline: none; 
-            border-color: rgba(181, 196, 216, 0.15);
-            background: rgba(181, 196, 216, 0.08);
+            background: rgba(181, 196, 216, 0.08); /* 🔥 BACKGROUND MÁS INTENSO EN FOCUS */
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             box-shadow: 
@@ -306,7 +319,13 @@
         /* Color de texto para date/time cuando están seleccionados */
         .form-input[type="date"]:valid,
         .form-input[type="time"]:valid {
-            color: rgba(255, 255, 255, 0.9);
+            color: rgba(181, 196, 216, 0.9) !important; /* 🔥 MISMO COLOR QUE EL RESTO */
+        }
+        
+        /* Mismo background que el resto cuando están vacíos */
+        .form-input[type="date"]:invalid,
+        .form-input[type="time"]:invalid {
+            background: rgba(181, 196, 216, 0.03); /* 🔥 MISMO BACKGROUND QUE EL RESTO */
         }
         
         .form-select { 
@@ -392,7 +411,7 @@
 
         .success-message {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            background: rgba(255, 0, 0, 0.95);
+            background: rgba(0, 255, 100, 0.95); /* 🔥 COLOR VERDE */
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             color: white; 
@@ -405,7 +424,7 @@
             opacity: 0; 
             visibility: hidden; 
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 8px 32px rgba(255, 0, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 255, 100, 0.3); /* 🔥 SOMBRA VERDE */
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         .success-message.visible { opacity: 1; visibility: visible; }
@@ -874,7 +893,7 @@
                         // Mostrar mensaje de éxito
                         const message = document.createElement('div');
                         message.className = 'success-message visible';
-                        message.textContent = '¡Evento enviado a "Eventos pendientes" para aprobación!';
+                        message.textContent = '¡Evento enviado!'; /* 🔥 MENSAJE SIMPLIFICADO */
                         document.body.appendChild(message);
                         
                         // Opcional: Mostrar detalles en consola
@@ -904,7 +923,7 @@
                         // Mostrar mensaje alternativo
                         const message = document.createElement('div');
                         message.className = 'success-message visible';
-                        message.textContent = '¡Evento enviado por email! (Google Sheets no disponible)';
+                        message.textContent = '¡Evento enviado!'; /* 🔥 MENSAJE SIMPLIFICADO */
                         document.body.appendChild(message);
                         
                         // Ocultar mensaje después de 2 segundos
@@ -1516,7 +1535,8 @@
                                         className="form-input"
                                         value={formData.fecha}
                                         onChange={(e) => handleFormChange('fecha', e.target.value)}
-                                        placeholder="Fecha"
+                                        placeholder="Fecha *"
+                                        title="Selecciona la fecha del evento"
                                         required
                                     />
                                 </div>
@@ -1526,7 +1546,8 @@
                                         className="form-input"
                                         value={formData.hora}
                                         onChange={(e) => handleFormChange('hora', e.target.value)}
-                                        placeholder="Hora"
+                                        placeholder="Hora *"
+                                        title="Selecciona la hora del evento"
                                         required
                                     />
                                 </div>
