@@ -225,19 +225,42 @@
         
         .form-input[type="date"]::-webkit-calendar-picker-indicator,
         .form-input[type="time"]::-webkit-calendar-picker-indicator {
-            filter: invert(1) opacity(0.3); /* 🔥 OPACIDAD MÁS BAJA PARA IGUALAR TONO */
-            cursor: pointer;
-            position: absolute;
-            left: 18px;
-            margin: 0;
-            width: 16px; /* 🔥 TAMAÑO CONSISTENTE */
-            height: 16px; /* 🔥 TAMAÑO CONSISTENTE */
+            display: none; /* 🔥 OCULTAR ICONOS NATIVOS */
         }
         
-        /* 🔥 OCULTAR ICONOS SUPERPUESTOS - Solo mostrar el nativo */
-        .form-row .form-input-half:first-child::before,
+        /* 🔥 USAR ICONOS SVG PERSONALIZADOS IGUALES AL RESTO */
+        .form-row .form-input-half:first-child::before {
+            content: '';
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(181,196,216,0.6)'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3e%3c/svg%3e");
+            background-size: 16px 16px;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.6; /* 🔥 MISMA OPACIDAD QUE EL RESTO */
+            z-index: 5;
+            pointer-events: none;
+        }
+        
         .form-row .form-input-half:last-child::before {
-            display: none !important; /* 🔥 OCULTAR ICONOS DUPLICADOS */
+            content: '';
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(181,196,216,0.6)'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'/%3e%3c/svg%3e");
+            background-size: 16px 16px;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.6; /* 🔥 MISMA OPACIDAD QUE EL RESTO */
+            z-index: 5;
+            pointer-events: none;
         }
         
         .form-input::placeholder {
