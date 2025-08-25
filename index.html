@@ -21,7 +21,7 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
         }
 
-        .event-content { position: relative; width: 100vw; overflow: hidden; margin-left: -20px; margin-right: -20px; margin-top: 20px; padding-top: 80px; }
+        .event-content { position: relative; width: 100vw; overflow: hidden; margin-left: -20px; margin-right: -20px; margin-top: 20px; padding-top: 56px; }
         .event-carousel { display: flex; transition: transform 1.8s cubic-bezier(0.16, 1, 0.3, 1); will-change: transform; }
         .event-carousel.dragging { transition: none; }
         .event-slide { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 20px; box-sizing: border-box; }
@@ -46,7 +46,16 @@
             margin-bottom: 4px; line-height: 0.85; letter-spacing: -0.01em; text-transform: uppercase;
         }
         .event-slide .brutalist-text.time-label { font-size: 31px !important; margin-bottom: 2px; }
-        .event-slide .brutalist-text.venue-text { font-size: 35px !important; padding-top: 5px !important; }
+        .event-slide .brutalist-text.venue-text { 
+            font-size: 35px !important; 
+            padding-top: 5px !important;
+            letter-spacing: 0.02em; /* 🔥 KERNING AUMENTADO */
+            line-height: 0.95; /* 🔥 ALTURA DE LÍNEA AJUSTADA */
+            max-width: 90%; /* 🔥 ANCHO MÁXIMO PARA CONTROLAR LÍNEAS */
+            word-wrap: break-word; /* 🔥 PERMITE QUIEBRE DE PALABRAS */
+            white-space: normal; /* 🔥 PERMITE MÚLTIPLES LÍNEAS */
+            margin: 0 auto; /* 🔥 CENTRADO */
+        }
 
         .logo-section { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 998; pointer-events: none; }
         .rampa-logo { width: 120px; height: auto; color: #B5C4D8; }
@@ -450,6 +459,79 @@
                 GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxr87QHb4gyd4biNdxF4-7j2DhVK1DiXc7CWO5y3e2Iu_jDnJaiDdbBn2DAlTOCVZsEUg/exec'
             };
 
+            // 🔥 FUNCIONES DE FECHA MEJORADAS
+            const getTodayDate = () => {
+                const today = new Date();
+                return today.toISOString().split('T')[0]; // YYYY-MM-DD
+            };
+
+            const getTomorrowDate = () => {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                return tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD
+            };
+
+            const parseEventDate = (dateStr) => {
+                if (!dateStr) return null;
+                
+                // Si viene en formato DD.MM.YY, convertir a YYYY-MM-DD
+                if (typeof dateStr === 'string' && /^\d{2}\.\d{2}\.\d{2}$/.test(dateStr)) {
+                    const [day, month, year] = dateStr.split('.');
+                    const fullYear = parseInt(year) < 50 ? `20${year}` : `19${year}`;
+                    return `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                }
+                
+                // Si ya está en formato YYYY-MM-DD, devolverlo
+                if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+                    return dateStr.split('T')[0]; // Solo la parte de fecha
+                }
+                
+                // Intentar parsear como fecha
+                try {
+                    const date = new Date(dateStr);
+                    if (!isNaN(date.getTime())) {
+                        return date.toISOString().split('T')[0];
+                    }
+                } catch (e) {
+                    console.warn('Error parseando fecha:', dateStr);
+                }
+                
+                return null;
+            };
+
+            const isEventVisible = (eventDateStr) => {
+                const eventDate = parseEventDate(eventDateStr);
+                const today = getTodayDate();
+                
+                if (!eventDate) return false;
+                
+                // Solo mostrar eventos de hoy en adelante
+                return eventDate >= today;
+            };
+
+            const getDisplayDay = (eventDateStr) => {
+                const eventDate = parseEventDate(eventDateStr);
+                const today = getTodayDate();
+                const tomorrow = getTomorrowDate();
+                
+                if (!eventDate) return 'FECHA';
+                
+                if (eventDate === today) {
+                    return 'HOY';
+                } else if (eventDate === tomorrow) {
+                    return 'MAÑANA';
+                } else {
+                    // Obtener día normal
+                    try {
+                        const date = new Date(eventDate);
+                        const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+                        return days[date.getDay()];
+                    } catch (e) {
+                        return 'FECHA';
+                    }
+                }
+            };
+
             // 🔥 FUNCIÓN DE TEST: Verificar conexión con Apps Script
             const testGoogleSheetsConnection = async () => {
                 try {
@@ -621,6 +703,58 @@
                 }
             };
 
+            // 🔥 FUNCIÓN NUEVA: Formatear texto con máximo 23 caracteres por línea
+            const formatVenueText = (text) => {
+                if (!text || text.length <= 23) return text;
+                
+                const words = text.split(' ');
+                const lines = [];
+                let currentLine = '';
+                
+                for (const word of words) {
+                    const testLine = currentLine ? `${currentLine} ${word}` : word;
+                    
+                    if (testLine.length <= 23) {
+                        currentLine = testLine;
+                    } else {
+                        if (currentLine) {
+                            lines.push(currentLine);
+                            currentLine = word;
+                        } else {
+                            // Si una palabra sola es más larga que 23 caracteres
+                            lines.push(word);
+                            currentLine = '';
+                        }
+                    }
+                }
+                
+                if (currentLine) {
+                    lines.push(currentLine);
+                }
+                
+                return lines.join('\n');
+            };
+
+            // 🔥 FUNCIÓN DE ORDENAMIENTO: Ordenar eventos por fecha (más recientes primero)
+            const sortEventsByDate = (events) => {
+                return events.sort((a, b) => {
+                    const dateA = parseEventDate(a.rawDate);
+                    const dateB = parseEventDate(b.rawDate);
+                    
+                    if (!dateA || !dateB) return 0;
+                    
+                    // Si las fechas son iguales, ordenar por hora
+                    if (dateA === dateB) {
+                        const timeA = a.time || '00:00';
+                        const timeB = b.time || '00:00';
+                        return timeA.localeCompare(timeB);
+                    }
+                    
+                    // Ordenar por fecha: más recientes primero
+                    return dateA.localeCompare(dateB);
+                });
+            };
+
             // 🔥 FUNCIÓN ACTUALIZADA: Cargar eventos desde tu Apps Script funcionando
             const loadEventsFromGoogleSheets = async () => {
                 try {
@@ -650,14 +784,33 @@
                                         time: cleanTimeFromSheets(event.Hora),
                                         venue: event.Lugar || '',
                                         category: event.Categoría || 'EVENTO',
-                                        day: event.Día || getDayOfWeek(event.Fecha)
+                                        day: getDisplayDay(event.Fecha), // 🔥 USAR NUEVA FUNCIÓN
+                                        rawDate: event.Fecha // Mantener fecha original para comparaciones
                                     };
                                     
                                     console.log('✅ Evento formateado:', formattedEvent);
                                     return formattedEvent;
-                                });
+                                })
+                                .filter(event => isEventVisible(event.rawDate)) // 🔥 FILTRAR EVENTOS PASADOS
+                                .sort((a, b) => { // 🔥 ORDENAR POR FECHA Y HORA
+                                    const dateA = parseEventDate(a.rawDate);
+                                    const dateB = parseEventDate(b.rawDate);
+                                    
+                                    if (!dateA || !dateB) return 0;
+                                    
+                                    // Si las fechas son iguales, ordenar por hora
+                                    if (dateA === dateB) {
+                                        const timeA = a.time || '00:00';
+                                        const timeB = b.time || '00:00';
+                                        return timeA.localeCompare(timeB);
+                                    }
+                                    
+                                    // Ordenar por fecha: más recientes primero
+                                    return dateA.localeCompare(dateB);
+                                })
+                                .map((event, index) => ({ ...event, id: index + 1 })); // 🔥 REASIGNAR IDs DESPUÉS DEL ORDENAMIENTO
 
-                                console.log('✅ Eventos formateados:', formattedEvents);
+                                console.log('✅ Eventos filtrados y ordenados:', formattedEvents);
                                 return formattedEvents;
                             } else {
                                 console.log('⚠️ No hay eventos o respuesta vacía:', data);
@@ -1036,31 +1189,35 @@
                         const googleEvents = await loadEventsFromGoogleSheets();
                         
                         if (googleEvents && googleEvents.length > 0) {
-                            console.log('✅ Eventos cargados desde Google Sheets');
+                            console.log('✅ Eventos cargados y ordenados desde Google Sheets');
                             setEvents(googleEvents);
                         } else {
-                            console.log('⚠️ No hay eventos, mostrando ejemplo');
+                            console.log('⚠️ No hay eventos, mostrando ejemplo ordenado');
                             const exampleEvents = [
                                 { 
                                     id: 1, 
                                     name: "Agrega eventos", 
-                                    date: "22.08.25", 
-                                    time: "23:00", 
+                                    date: "25.08.25", 
+                                    time: "20:00", 
                                     venue: "Usa el botón + para agregar eventos", 
                                     category: "INFO", 
-                                    day: "VIERNES" 
+                                    day: "HOY",
+                                    rawDate: getTodayDate()
                                 },
                                 { 
                                     id: 2, 
                                     name: "Auto-actualización", 
-                                    date: "23.08.25", 
-                                    time: "20:00", 
+                                    date: "26.08.25", 
+                                    time: "21:00", 
                                     venue: "Se actualiza automáticamente desde Google Sheets", 
                                     category: "INFO", 
-                                    day: "SÁBADO" 
+                                    day: "MAÑANA",
+                                    rawDate: getTomorrowDate()
                                 }
                             ];
-                            setEvents(exampleEvents);
+                            // Aplicar ordenamiento también a los eventos de ejemplo
+                            const sortedExampleEvents = sortEventsByDate(exampleEvents);
+                            setEvents(sortedExampleEvents);
                         }
                         
                     } catch (error) {
@@ -1073,7 +1230,8 @@
                                 time: "23:00", 
                                 venue: "Verifica la configuración de Google Sheets", 
                                 category: "ERROR", 
-                                day: "VIERNES" 
+                                day: "VIERNES",
+                                rawDate: "2025-08-22"
                             }
                         ];
                         setEvents(fallbackEvents);
@@ -1087,8 +1245,8 @@
                 // Auto-recargar cada 30 segundos para mostrar nuevos eventos
                 const interval = setInterval(async () => {
                     const newEvents = await loadEventsFromGoogleSheets();
-                    if (newEvents && newEvents.length > events.length) {
-                        console.log('🔄 Nuevos eventos detectados, actualizando...');
+                    if (newEvents && newEvents.length !== events.length) {
+                        console.log('🔄 Eventos actualizados detectados, recargando y reordenando...');
                         setEvents(newEvents);
                     }
                 }, 30000);
@@ -1303,7 +1461,10 @@
                                             <div className="brutalist-text eventname">{event.name}</div>
                                             
                                             {event.venue && event.venue !== event.name && (
-                                                <div className="brutalist-text time-label venue-text">{event.venue}</div>
+                                                <div className="brutalist-text time-label venue-text" 
+                                                     style={{ whiteSpace: 'pre-line' }}>
+                                                    {formatVenueText(event.venue)}
+                                                </div>
                                             )}
                                             
                                             <div className="brutalist-text time-label">{event.time}H</div>
